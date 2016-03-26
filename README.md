@@ -4,7 +4,7 @@
 
 # Remote rendering
 
-The main idea of remote rendering is to distribute the rendering onto multiple nodes. A client splits its screen is multiple tiles, and each buffer for each tile is calculated by different node. These calculated buffers are stacked back together by the client and it calculates the final illumination.
+The main idea of remote rendering is to distribute the rendering onto multiple nodes. A client splits its screen into multiple tiles, and each buffer for each tile is calculated by a different node. These calculated buffers are stacked back together by the client and it calculates the final illumination.
 
 ## The Nodes
 
