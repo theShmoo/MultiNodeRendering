@@ -107,7 +107,7 @@ public class GBufferInterface : MonoBehaviour
 
         // Assign the Buffer to a camera
         camera = GetComponent<Camera>();
-        camera.AddCommandBuffer(CameraEvent.AfterGBuffer, buffer);
+        camera.AddCommandBuffer(CameraEvent.BeforeLighting, buffer);
     }
 
 
