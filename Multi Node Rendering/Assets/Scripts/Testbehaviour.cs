@@ -12,27 +12,28 @@ public class TestBehaviour : MonoBehaviour
     public Material mat;
 
     private CommandBuffer buffer;
+    private CommandBuffer buffer2;
 
 
 
     void Start()
     {
         buffer = new CommandBuffer();
-
-        Camera.main.AddCommandBuffer(CameraEvent.BeforeGBuffer, buffer);
+        buffer.name = "Draw GeometryCube";
+        //Camera.main.AddCommandBuffer(CameraEvent.BeforeGBuffer, buffer);
+      //  Camera.main.enabled = false;
     }
 
     void OnWillRenderObject()
     {
-      //  buffer.Clear();
-      //  buffer.DrawMesh(mesh, this.transform.localToWorldMatrix, mat, 0, 0);
+        
 
     }
 
     void OnRenderObject()
     {
-     //   mat.SetPass(0);
-     //   Graphics.DrawMeshNow(mesh, this.transform.localToWorldMatrix);
+      //  mat.SetPass(0);
+       // Graphics.DrawMeshNow(mesh, this.transform.localToWorldMatrix);
 
     }
 
@@ -40,6 +41,11 @@ public class TestBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        this.gameObject.transform.Rotate(Vector3.up, 90.0f * Time.deltaTime);      
+       // Camera.main.Render();
+        this.gameObject.transform.Rotate(Vector3.up, 90.0f * Time.deltaTime);
+        ////Debug.Log("bla");
+        //buffer.Clear();
+        //buffer.DrawMesh(mesh, this.transform.localToWorldMatrix, mat);
+        Graphics.DrawMesh(mesh, this.transform.localToWorldMatrix, mat, 0);
     }
 }

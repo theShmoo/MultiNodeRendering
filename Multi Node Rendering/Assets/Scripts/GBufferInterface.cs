@@ -86,13 +86,13 @@ public class GBufferInterface : MonoBehaviour
     void Start()
     {
    
-
+        
         // Create Render Textures for gBuffer copy
         albedo = CreateRenderTexture(RenderTextureFormat.ARGB32);                                                     // Diffuse color
         specular = CreateRenderTexture(RenderTextureFormat.ARGB32);                                                   // Specular color
         normals = CreateRenderTexture(RenderTextureFormat.ARGB2101010);                                               // World space normal
-        emission = CreateRenderTexture(Camera.main.hdr ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32);  // Emission + lighting + lightmaüs + refletion probes
-        depth = CreateRenderTexture(RenderTextureFormat.Depth, 24);                                                   // Depth
+        emission = CreateRenderTexture(Camera.main.hdr ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB2101010);  // Emission + lighting + lightmaüs + refletion probes
+        depth = CreateRenderTexture(RenderTextureFormat.Depth, 16);                                                   // Depth
 
 
          // Create Commands to copy gBuffer content to the Render Textures
@@ -103,11 +103,11 @@ public class GBufferInterface : MonoBehaviour
         buffer.Blit(BuiltinRenderTextureType.GBuffer1, specular);
         buffer.Blit(BuiltinRenderTextureType.GBuffer2, normals);
         buffer.Blit(BuiltinRenderTextureType.GBuffer3, emission);
-        buffer.Blit(BuiltinRenderTextureType.Depth, depth);
-
+        //buffer.Blit(BuiltinRenderTextureType.Depth, depth);
         // Assign the Buffer to a camera
         camera = GetComponent<Camera>();
         camera.AddCommandBuffer(CameraEvent.BeforeLighting, buffer);
+        
     }
 
 
