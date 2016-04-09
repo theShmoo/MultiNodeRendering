@@ -14,10 +14,12 @@ public class UIManager : MonoBehaviour
     private RawImage albedoImage;
     private RawImage specularImage;
     private RawImage normalsImage;
-    private RawImage emmisionImage;
-    private RawImage depthImage;
+    private RawImage positionImage;
 
-    //public GBufferInterface gBuffer;
+    private GameObject gBufferPanel;
+    private Toggle toggleGBuffer;
+
+    public GBuffer gBuffer;
 
 
     /// <summary>
@@ -27,15 +29,17 @@ public class UIManager : MonoBehaviour
     {
 
         if (!gBuffer)
-           // gBuffer = Camera.main.GetComponent<GBufferInterface>();
+            gBuffer = Camera.main.GetComponent<GBuffer>();
 
 
-        albedoImage = GameObject.Find("AlbedoImage").GetComponent<RawImage>();
+        albedoImage = GameObject.Find("DiffuseImage").GetComponent<RawImage>();
         specularImage = GameObject.Find("SpecularImage").GetComponent<RawImage>();
 
         normalsImage = GameObject.Find("NormalsImage").GetComponent<RawImage>();
-        emmisionImage = GameObject.Find("EmissionImage").GetComponent<RawImage>();
-        depthImage = GameObject.Find("DepthImage").GetComponent<RawImage>();
+        positionImage = GameObject.Find("PositionImage").GetComponent<RawImage>();
+
+        toggleGBuffer = GameObject.Find("ToggleGBuffer").GetComponent<Toggle>();
+        gBufferPanel = GameObject.Find("GBufferPanel");        
 
     }
 
@@ -47,7 +51,6 @@ public class UIManager : MonoBehaviour
     /// </summary>
     void Update()
     {
-        Graphics.SetRenderTarget(null);
         UpdateGBufferImages();
     }
 
@@ -59,10 +62,22 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void UpdateGBufferImages()
     {
-        //albedoImage.texture = gBuffer.Albedo;
-        //specularImage.texture = gBuffer.Specular;
-        //normalsImage.texture = gBuffer.Normals;
-        //emmisionImage.texture = gBuffer.Emission;
-        //depthImage.texture = gBuffer.Depth;
+        if (gBufferPanel.activeInHierarchy && gBuffer)
+        {
+            albedoImage.texture = gBuffer.AlbedoBufferTexture;
+            specularImage.texture = gBuffer.SpecularBufferTexture;
+            normalsImage.texture = gBuffer.NormalBufferTexture;
+            positionImage.texture = gBuffer.PositionBufferTexture;
+        }
+    }
+
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void ShowGBuffer(bool enabled)
+    {     
+        gBufferPanel.SetActive(enabled);
     }
 }

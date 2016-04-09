@@ -1,98 +1,58 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.Rendering;
+
+[RequireComponent(typeof(Camera))]
 public class DeferredRenderer : MonoBehaviour
 {
 
-    public RenderTexture[] gBufferTextures;
-    public RenderBuffer[] gBuffer;
-
-    private RenderTexture compositeBuffer;
-
-    public Camera camera;
+    /// <summary>
+    /// Geometry Buffer
+    /// </summary>
+    public GBuffer gBuffer;
+  
+    /// <summary>
+    /// RenderTexture to store the (deferred) rendered image before swapping it to the screen
+    /// </summary>
+    public RenderTexture compositeBuffer;
 
     /// <summary>
-    /// 
+    /// Material used to render a textured full screen quad
     /// </summary>
     public Material fullScreenQuadMaterial;
 
     /// <summary>
-    /// 
+    /// material used to render the deferred Geometry Pass
     /// </summary>
     public Material deferredGeometryPassMaterial;
 
+    /// <summary>
+    /// Material used to render the deferred Lighting Pass
+    /// </summary>
+    public Material deferredLightingPassMaterial;
 
-
-
+    // Remove me when callback rendering system is in place
     private TestBehaviour cube;
 
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public RenderTexture NormalBufferTexture
-    {
-        get { return gBufferTextures[0]; }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public RenderTexture AlbedoBufferTexture
-    {
-        get { return gBufferTextures[1]; }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public RenderTexture SpecularBufferTexture
-    {
-        get { return gBufferTextures[2]; }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public RenderTexture PositionBufferTexture
-    {
-        get { return gBufferTextures[3]; }
-    }
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public static RenderTexture CreateRenderTexture(int width, int height, int depth, RenderTextureFormat format)
-    {
-        Debug.Log("DeferredRenderer.CreateRenderTexture() " + width + ", " + height + ", " + depth);
-        RenderTexture r = new RenderTexture(width, height, depth, format);
-        r.filterMode = FilterMode.Point;
-        r.useMipMap = false;
-        r.generateMips = false;
-        r.enableRandomWrite = true;
-        //r.wrapMode = TextureWrapMode.Repeat;
-        r.Create();
-        return r;
-    }
+    private Camera camera;
+   
 
     /// <summary>
     /// 
     /// </summary>
     void OnEnable()
     {
-        gBufferTextures = new RenderTexture[4];
-        gBuffer = new RenderBuffer[4];
+        gBuffer = GetComponent<GBuffer>();
+        if(!gBuffer)
+        {
+           gBuffer = this.gameObject.AddComponent<GBuffer>();
+        }
 
         camera = GetComponent<Camera>();
 
-        CreateRenderTargets(camera.pixelWidth, camera.pixelHeight);
+        // Create a Render Texture for composing the image
+        compositeBuffer = GBuffer.CreateRenderTexture(camera.pixelWidth, camera.pixelHeight, 0, RenderTextureFormat.ARGBFloat);
+        compositeBuffer.filterMode = FilterMode.Trilinear;
     }
 
 
@@ -102,8 +62,7 @@ public class DeferredRenderer : MonoBehaviour
     /// </summary>
     void OnDisable()
     {
-        gBufferTextures = null;
-        gBuffer = null;
+
     }
 
 
@@ -119,42 +78,6 @@ public class DeferredRenderer : MonoBehaviour
     }
 
 
-
-
-    /// <summary>
-    /// Update is called once per frame
-    /// </summary>
-    void Update()
-    {
-
-    }
-
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="width"></param>
-    /// <param name="height"></param>
-    void CreateRenderTargets(int width, int height)
-    {
-        RenderTextureFormat format = RenderTextureFormat.ARGBFloat;
-        // Create a Render Texture for each color attachment
-        
-        for (int i = 0; i < gBuffer.Length; i++)
-        {
-            // Set depth on normalTexture, since it stores depth as well
-            int depth = i == 0 ? 32 : 0;
-            gBufferTextures[i] = CreateRenderTexture(width, height, depth, format);
-            gBuffer[i] = gBufferTextures[i].colorBuffer;
-        }
-
-        // Create a Render Texture for composing the image
-
-        compositeBuffer = CreateRenderTexture(width, height, 0, format);
-        compositeBuffer.filterMode = FilterMode.Trilinear;
-    }
 
 
 
@@ -191,8 +114,8 @@ public class DeferredRenderer : MonoBehaviour
     /// </summary>
     private void RenderGeometryPass()
     {
-        
-        Graphics.SetRenderTarget(gBuffer, NormalBufferTexture.depthBuffer);
+
+        gBuffer.BindAsRenderTarget();
         GL.Clear(true, true, Color.black);
         // TODO: Render all objects here using referenced callback functions
 
@@ -213,7 +136,7 @@ public class DeferredRenderer : MonoBehaviour
         // TODO Render all Light sources
        
         // Change this: This currently only renders the albedo texture unto the compositeBUffer     
-        DrawFullscreenQuad(AlbedoBufferTexture);
+        DrawFullscreenQuad(gBuffer.AlbedoBufferTexture);
     }
 
 
@@ -231,8 +154,7 @@ public class DeferredRenderer : MonoBehaviour
 
 
     /// <summary>
-    /// Draws a quad in full screen. 
-    /// Use this rather then drawing a mesh quad in the origin, since View Frustum Culling would cull a mesh object
+    /// Draws a textured quad in full screen. 
     /// </summary>
     /// <param name="z"></param>
     public void DrawFullscreenQuad(Texture texture)
