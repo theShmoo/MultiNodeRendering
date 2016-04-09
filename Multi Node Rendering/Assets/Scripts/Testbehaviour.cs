@@ -18,10 +18,6 @@ public class TestBehaviour : MonoBehaviour
 
     void Start()
     {
-        buffer = new CommandBuffer();
-        buffer.name = "Draw GeometryCube";
-        //Camera.main.AddCommandBuffer(CameraEvent.BeforeGBuffer, buffer);
-      //  Camera.main.enabled = false;
     }
 
     void OnWillRenderObject()
@@ -43,9 +39,13 @@ public class TestBehaviour : MonoBehaviour
     {
        // Camera.main.Render();
         this.gameObject.transform.Rotate(Vector3.up, 90.0f * Time.deltaTime);
-        ////Debug.Log("bla");
-        //buffer.Clear();
-        //buffer.DrawMesh(mesh, this.transform.localToWorldMatrix, mat);
-        Graphics.DrawMesh(mesh, this.transform.localToWorldMatrix, mat, 0);
+
+        
+    }
+
+    public void Render()
+    {
+        mat.SetPass(0);
+        Graphics.DrawMeshNow(mesh, this.transform.position, this.transform.rotation);
     }
 }

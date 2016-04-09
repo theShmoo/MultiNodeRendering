@@ -17,7 +17,7 @@ public class UIManager : MonoBehaviour
     private RawImage emmisionImage;
     private RawImage depthImage;
 
-    public GBufferInterface gBuffer;
+    //public GBufferInterface gBuffer;
 
 
     /// <summary>
@@ -27,7 +27,7 @@ public class UIManager : MonoBehaviour
     {
 
         if (!gBuffer)
-            gBuffer = Camera.main.GetComponent<GBufferInterface>();
+           // gBuffer = Camera.main.GetComponent<GBufferInterface>();
 
 
         albedoImage = GameObject.Find("AlbedoImage").GetComponent<RawImage>();
@@ -47,7 +47,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     void Update()
     {
-
+        Graphics.SetRenderTarget(null);
         UpdateGBufferImages();
     }
 
@@ -59,10 +59,10 @@ public class UIManager : MonoBehaviour
     /// </summary>
     private void UpdateGBufferImages()
     {
-        albedoImage.texture = gBuffer.Albedo;
-        specularImage.texture = gBuffer.Specular;
-        normalsImage.texture = gBuffer.Normals;
-        emmisionImage.texture = gBuffer.Emission;
-        depthImage.texture = gBuffer.Depth;
+        //albedoImage.texture = gBuffer.Albedo;
+        //specularImage.texture = gBuffer.Specular;
+        //normalsImage.texture = gBuffer.Normals;
+        //emmisionImage.texture = gBuffer.Emission;
+        //depthImage.texture = gBuffer.Depth;
     }
 }
