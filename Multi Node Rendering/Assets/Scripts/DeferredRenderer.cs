@@ -35,7 +35,16 @@ public class DeferredRenderer : MonoBehaviour
     private TestBehaviour cube;
 
     private Camera camera;
-   
+
+    private bool active = false;
+
+
+    public bool Active
+    {
+        get { return active; }
+        set { active = value; }
+    }
+
 
     /// <summary>
     /// 
@@ -53,6 +62,7 @@ public class DeferredRenderer : MonoBehaviour
         // Create a Render Texture for composing the image
         compositeBuffer = GBuffer.CreateRenderTexture(camera.pixelWidth, camera.pixelHeight, 0, RenderTextureFormat.ARGBFloat);
         compositeBuffer.filterMode = FilterMode.Trilinear;
+        
     }
 
 
@@ -80,13 +90,14 @@ public class DeferredRenderer : MonoBehaviour
 
 
 
-
-
     /// <summary>
     /// Render custom deferred Pipeline after after the camera has rendered its part
     /// </summary>
     void OnPostRender()
     {
+        // Don't render if not active
+        if (!active) return;
+
         // Store the current RenderTarget
         RenderTexture current = RenderTexture.active;
 
