@@ -18,6 +18,8 @@ public class TestBehaviour : MonoBehaviour
 
     void Start()
     {
+        DeferredRenderer renderer = Camera.main.GetComponent<DeferredRenderer>();
+        renderer.AddRenderCallback(DeferredRenderer.RenderEvent.GBUFFER, Render);
     }
 
     void OnWillRenderObject()

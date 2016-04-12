@@ -1,16 +1,42 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
+using System;
 using UnityEngine.Rendering;
 
 [RequireComponent(typeof(Camera))]
 public class DeferredRenderer : MonoBehaviour
 {
 
+
+    /// <summary>
+    /// A RenderEvent describes a state of the renderer. Use this to insert custom render functionality into the render pipeline at this state
+    /// <param name="GBUFFER">GBUFFER: 
+    /// Renders the geometry pass into a set up gBuffer
+    /// Before this pass, the gBuffer is empty. 
+    /// </param>
+    /// <param name="LIGHTING">LIGHTING: 
+    /// Renders lighting information into the composite buffer, gBuffer is set up as textures. In order to convolute lighting correctly it is recommended to use additive blending.
+    /// Before this pass, the composite buffer is empty. 
+    /// </param>
+    /// <param name="TRANSPARENT">TRANSPARENT: 
+    /// Execute custom transparent render functions as a forward pass. 
+    /// The composite buffer is up as render target and the depth buffer has beeen blit into it, to use correct depth testing
+    /// </param>
+    /// <param name="EFFECT">EFFECT: 
+    /// The results of Lighting und forward pass stored in the composite buffer are accessible via textures in order to allow screen space effects. In order to convolute the effects correctly it is recommended to use additive blending and disable depth test.
+    /// NOT YET SUPPORTED!!
+    /// </param>
+    /// </summary>
+    public enum RenderEvent
+    {
+        GBUFFER = 0, LIGHTING = 1, TRANSPARENT = 2, EFFECT = 3
+    };
+
     /// <summary>
     /// Geometry Buffer
     /// </summary>
     public GBuffer gBuffer;
-  
+
     /// <summary>
     /// RenderTexture to store the (deferred) rendered image before swapping it to the screen
     /// </summary>
@@ -38,6 +64,36 @@ public class DeferredRenderer : MonoBehaviour
 
     private bool active = false;
 
+    //--------------------------------------------------------------------------------------
+    // Collections to store all callbacks
+    //--------------------------------------------------------------------------------------
+    private List<Action> gBufferCallbacks       = new List<Action>();
+    private List<Action> lightingCallbacks      = new List<Action>();
+    private List<Action> transparentCallbacks   = new List<Action>();
+    private List<Action> effectCallbacks        = new List<Action>();
+
+    /// <summary>
+    /// Adds a custom render callback to the renderer at the given render event. 
+    /// Use this to dispatch custom render code. 
+    /// </summary>
+    public void AddRenderCallback(RenderEvent ev, Action callback)
+    {
+        switch (ev)
+        {
+            case RenderEvent.GBUFFER:
+                gBufferCallbacks.Add(callback);
+                break;
+            case RenderEvent.LIGHTING:
+                lightingCallbacks.Add(callback);
+                break;
+            case RenderEvent.TRANSPARENT:
+                transparentCallbacks.Add(callback);
+                break;
+            case RenderEvent.EFFECT:
+                effectCallbacks.Add(callback);
+                break;
+        }
+    }
 
     public bool Active
     {
@@ -52,9 +108,9 @@ public class DeferredRenderer : MonoBehaviour
     void OnEnable()
     {
         gBuffer = GetComponent<GBuffer>();
-        if(!gBuffer)
+        if (!gBuffer)
         {
-           gBuffer = this.gameObject.AddComponent<GBuffer>();
+            gBuffer = this.gameObject.AddComponent<GBuffer>();
         }
 
         camera = GetComponent<Camera>();
@@ -62,7 +118,7 @@ public class DeferredRenderer : MonoBehaviour
         // Create a Render Texture for composing the image
         compositeBuffer = GBuffer.CreateRenderTexture(camera.pixelWidth, camera.pixelHeight, 0, RenderTextureFormat.ARGBFloat);
         compositeBuffer.filterMode = FilterMode.Trilinear;
-        
+
     }
 
 
@@ -83,8 +139,8 @@ public class DeferredRenderer : MonoBehaviour
 
     void Start()
     {
-       
-       
+
+
     }
 
 
@@ -108,12 +164,12 @@ public class DeferredRenderer : MonoBehaviour
         RenderLightingPass();
 
         // Set the stored RenderTexture as RenderTarget
-        
+
         RenderPostprocess();
 
 
-        // Swap Image to screen
-        Graphics.SetRenderTarget(current);        
+        // Lastly swap image to screen
+        Graphics.SetRenderTarget(current);
         DrawFullscreenQuad(compositeBuffer);
     }
 
@@ -128,10 +184,14 @@ public class DeferredRenderer : MonoBehaviour
 
         gBuffer.BindAsRenderTarget();
         GL.Clear(true, true, Color.black);
-        // TODO: Render all objects here using referenced callback functions
 
+        // Execute all gBuffer callbacks
+        foreach(Action cb in gBufferCallbacks)
+        {
+            cb.Invoke();
+        }
         // Dummy Solution
-         GameObject.Find("Cube").GetComponent<TestBehaviour>().Render();
+       // GameObject.Find("Cube").GetComponent<TestBehaviour>().Render();
     }
 
 
@@ -142,12 +202,28 @@ public class DeferredRenderer : MonoBehaviour
     /// </summary>
     private void RenderLightingPass()
     {
+        // Bind and clear the composite buffer
         Graphics.SetRenderTarget(compositeBuffer);
         GL.Clear(true, true, Color.black);
+
         // TODO Render all Light sources
-       
-        // Change this: This currently only renders the albedo texture unto the compositeBUffer     
+        // Change this: This currently only renders the albedo texture unto the compositeBuffer     
         DrawFullscreenQuad(gBuffer.AlbedoBufferTexture);
+        
+        // Execute all lighting callbacks ( TO execute custom lighting (Using additive blending)
+        foreach (Action cb in lightingCallbacks)
+        {
+            cb.Invoke();
+        }
+
+        // TODO: Blit Depth buffer into the composite buffer in order to allow transparent objects to be rendered using forward rendering
+        // Graphics.Blit(this.gBuffer.DepthBuffer, compositeBuffer.depthBuffer);
+        
+        // Execute all transparent callbacks to render transparent obejcts in forward pass (Using depth test)
+        foreach (Action cb in transparentCallbacks)
+        {
+            cb.Invoke();
+        }
     }
 
 
@@ -158,7 +234,10 @@ public class DeferredRenderer : MonoBehaviour
     /// </summary>
     private void RenderPostprocess()
     {
-        // TODO 
+        foreach(Action cb in effectCallbacks)
+        {
+            cb.Invoke();
+        }
     }
 
 
