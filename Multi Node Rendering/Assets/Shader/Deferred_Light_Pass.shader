@@ -10,6 +10,10 @@
 		_SpecularMap ("specular map", 2D) = "white" {}
 		[NoScaleOffset]
 		_NormalMap ("normal map", 2D) = "white" {}
+		_Color("Color", Color) = (1, 1, 1, 1)
+		_LightPos("Light position", Vector) = (1, 1, 1, 1)
+		_CameraPos("Camera position", Vector) = (1, 1, 1, 1)
+		
 	}
 
 	SubShader 
@@ -42,6 +46,10 @@
 		sampler2D _ColorMap;
 		sampler2D _SpecularMap;
 		sampler2D _NormalMap;
+		float4 _Color;
+		float4 _CameraPos;
+		float4 _LightPos;
+
 
 		//-------------------------------------------------------------------------------------------------
 		// Vertex Shader
@@ -77,10 +85,8 @@
 			normal = normalize(normal);
 
 			// calculate lightning
-			// TODO: insert light pos
-			half3 lightDir = normalize(-worldPosition); //lightpos - worldpos
-			// TODO insert light color
-			half3 lightColor = half3(1, 1, 1);
+			half3 lightDir = normalize(_LightPos.rgb-worldPosition); //lightpos - worldpos
+			half3 lightColor = _Color.rgb;
 			// TODO insert ambient color
 			half3 ambientLight = lightColor * half3(0.5, 0.5, 0.5);
 
@@ -88,7 +94,7 @@
 			half3 diffuseLight = lightColor * dot(normal.rgb, lightDir.rgb);
 
 			// TODO inser camera position
-			half3 cameraPos = half3(1, 1, 1);
+			half3 cameraPos = _CameraPos.rgb;
 			half3 eyeDirection = normalize(-worldPosition);
 			half3 lightReflect = normalize(reflect(-lightDir, normal));
 			float cosAngle = max(0.0, dot(eyeDirection, lightReflect));

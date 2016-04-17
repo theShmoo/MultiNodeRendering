@@ -46,6 +46,8 @@ public class LightBehaviour : MonoBehaviour
         mat.SetTexture("_ColorMap", gBuffer.AlbedoBufferTexture);
         mat.SetTexture("_SpecularMap", gBuffer.SpecularBufferTexture);
         mat.SetTexture("_NormalMap", gBuffer.NormalBufferTexture);
+        mat.SetVector("_LightPos", transform.position);
+        mat.SetVector("_CameraPos", Camera.main.transform.position);
 
         GL.Begin(GL.QUADS);
         {
