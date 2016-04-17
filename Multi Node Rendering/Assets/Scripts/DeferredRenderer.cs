@@ -190,8 +190,6 @@ public class DeferredRenderer : MonoBehaviour
         {
             cb.Invoke();
         }
-        // Dummy Solution
-       // GameObject.Find("Cube").GetComponent<TestBehaviour>().Render();
     }
 
 
@@ -208,13 +206,14 @@ public class DeferredRenderer : MonoBehaviour
 
         // TODO Render all Light sources
         // Change this: This currently only renders the albedo texture unto the compositeBuffer     
-        DrawFullscreenQuad(gBuffer.AlbedoBufferTexture);
         
         // Execute all lighting callbacks ( TO execute custom lighting (Using additive blending)
         foreach (Action cb in lightingCallbacks)
         {
             cb.Invoke();
         }
+
+        //DrawFullscreenQuad(compositeBuffer);
 
         // TODO: Blit Depth buffer into the composite buffer in order to allow transparent objects to be rendered using forward rendering
         // Graphics.Blit(this.gBuffer.DepthBuffer, compositeBuffer.depthBuffer);
