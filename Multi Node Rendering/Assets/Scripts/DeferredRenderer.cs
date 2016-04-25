@@ -7,7 +7,15 @@ using UnityEngine.Rendering;
 public class DeferredRenderer : MonoBehaviour
 {
 
+    private float left = -0.5f;
+    private float right = 0.5F;
+    private float top = 0.5f;
+    private float bottom = -0.5f;
 
+    public float scaleLeft = 1.0f;
+    public float scaleRight = 1.0f;
+    public float scaleTop = 1.0f;
+    public float scaleBottom = 1.0f;
     /// <summary>
     /// A RenderEvent describes a state of the renderer. Use this to insert custom render functionality into the render pipeline at this state
     /// <param name="GBUFFER">GBUFFER: 
@@ -146,54 +154,62 @@ public class DeferredRenderer : MonoBehaviour
 
     void LateUpdate()
     {
-        float left = -1.0f;
-        float right = 0.0f;
-        float top = 1.0f;
-        float bottom = -1.0f;
-        Camera cam = Camera.main;
-       // Matrix4x4 m = PerspectiveOffCenter(left, right, bottom, top, cam.nearClipPlane, cam.farClipPlane);
 
-       //Matrix4x4 scale = Matrix4x4.Scale();
-        Matrix4x4 translation = Matrix4x4.TRS(new Vector3(0.5f, 0.5f, 0.0f), Quaternion.identity, new Vector3(2.0f, 1.0f, 1.0f));
-        cam.projectionMatrix = translation * cam.projectionMatrix;
+        Camera cam = Camera.main;
+
+
+        top = cam.nearClipPlane * Mathf.Tan(cam.fieldOfView * Mathf.PI / 360.0f);
+        bottom = -top;
+
+        left = bottom * cam.aspect;
+        right = top * cam.aspect;
+
+        top *= scaleTop;
+        bottom *= scaleBottom;
+        left *= scaleLeft;
+        right *= scaleRight;
+
+        cam.projectionMatrix = PerspectiveOffCenter(left, right, bottom, top, cam.nearClipPlane, cam.farClipPlane);
+
     }
 
+    //static Matrix4x4 Frustum(f)
 
-    //static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far)
-    //{
+    static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far)
+    {
 
-    //    //float x = 2.0F * near / (right - left);
-    //    //float y = 2.0F * near / (top - bottom);
-    //    //float a = (right + left) / (right - left);
-    //    //float b = (top + bottom) / (top - bottom);
-    //    //float c = -(far + near) / (far - near);
-    //    //float d = -(2.0F * far * near) / (far - near);
-    //    //float e = -1.0F;
-    //    //Matrix4x4 m = new Matrix4x4();
-        
-    //    //m[0, 0] = x;
-    //    //m[0, 1] = 0;
-    //    //m[0, 2] = a;
-    //    //m[0, 3] = 0;
-    //    //m[1, 0] = 0;
-    //    //m[1, 1] = y;
-    //    //m[1, 2] = b;
-    //    //m[1, 3] = 0;
-    //    //m[2, 0] = 0;
-    //    //m[2, 1] = 0;
-    //    //m[2, 2] = c;
-    //    //m[2, 3] = d;
-    //    //m[3, 0] = 0;
-    //    //m[3, 1] = 0;
-    //    //m[3, 2] = e;
-    //    //m[3, 3] = 0;
-    //    //return m;
-   // }
+        float x = 2.0F * near / (right - left);
+        float y = 2.0F * near / (top - bottom);
+        float a = (right + left) / (right - left);
+        float b = (top + bottom) / (top - bottom);
+        float c = -(far + near) / (far - near);
+        float d = -(2.0F * far * near) / (far - near);
+        float e = -1.0F;
+        Matrix4x4 m = new Matrix4x4();
+        //Matrix4x4.Perspective()
+        m[0, 0] = x;
+        m[0, 1] = 0;
+        m[0, 2] = a;
+        m[0, 3] = 0;
+        m[1, 0] = 0;
+        m[1, 1] = y;
+        m[1, 2] = b;
+        m[1, 3] = 0;
+        m[2, 0] = 0;
+        m[2, 1] = 0;
+        m[2, 2] = c;
+        m[2, 3] = d;
+        m[3, 0] = 0;
+        m[3, 1] = 0;
+        m[3, 2] = e;
+        m[3, 3] = 0;
+        return m;
+    }
 
 
 
     /// <summary>
-    /// Render custom deferred Pipeline after after the camera has rendered its part
+    /// Render custom deferred Pipeline after the camera has rendered its part
     /// </summary>
     void OnPostRender()
     {
@@ -263,8 +279,8 @@ public class DeferredRenderer : MonoBehaviour
 
         //DrawFullscreenQuad(gBuffer.AlbedoBufferTexture);
 
-        fullScreenQuadMaterial.SetTexture("_MainTex", gBuffer.AlbedoBufferTexture);
-        Graphics.Blit(null, compositeBuffer, fullScreenQuadMaterial, 0);
+        //fullScreenQuadMaterial.SetTexture("_MainTex", gBuffer.AlbedoBufferTexture);
+        //Graphics.Blit(null, compositeBuffer, fullScreenQuadMaterial, 0);
         // TODO: Blit Depth buffer into the composite buffer in order to allow transparent objects to be rendered using forward rendering
         // Graphics.Blit(this.gBuffer.DepthBuffer, compositeBuffer.depthBuffer);
 
