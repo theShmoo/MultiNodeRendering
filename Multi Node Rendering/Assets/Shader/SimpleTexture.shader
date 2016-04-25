@@ -57,19 +57,11 @@ SubShader {
 	//-------------------------------------------------------------------------------------------------
 	// Pixel shader entry point
 	//-------------------------------------------------------------------------------------------------
-	PSOutput frag (VSOutput input)
-	{
-				
-		float2 texcoords = (input.screen_pos.xy / input.screen_pos.w + 1.0) * 0.5;
-		 #if UNITY_UV_STARTS_AT_TOP
-        texcoords.y = 1.0 - texcoords.y;
-		 #endif
+	PSOutput frag (v2f_img input)
+	{			
 		
 		PSOutput output;
-		output.color = tex2D(_MainTex, texcoords);
-		output.color2 = float4(1, 0, 0, 1);
-		output.color3 = float4(0, 1, 0, 1);
-		output.color4 = float4(0, 0, 1, 1);
+		output.color = tex2D(_MainTex, input.uv);
 		return output;
 	}
 
@@ -78,7 +70,7 @@ ENDCG
 	Pass {
 		Name "Full Screen Quad"
         CGPROGRAM
-        #pragma vertex vert
+        #pragma vertex vert_img
         #pragma fragment frag        
         ENDCG
     }
