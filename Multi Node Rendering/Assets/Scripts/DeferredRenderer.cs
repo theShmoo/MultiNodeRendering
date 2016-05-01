@@ -6,16 +6,9 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(Camera))]
 public class DeferredRenderer : MonoBehaviour
 {
+    private ScreenTile screenTile;
 
-    private float left = -0.5f;
-    private float right = 0.5F;
-    private float top = 0.5f;
-    private float bottom = -0.5f;
 
-    public float scaleLeft = 1.0f;
-    public float scaleRight = 1.0f;
-    public float scaleTop = 1.0f;
-    public float scaleBottom = 1.0f;
     /// <summary>
     /// A RenderEvent describes a state of the renderer. Use this to insert custom render functionality into the render pipeline at this state
     /// <param name="GBUFFER">GBUFFER: 
@@ -110,23 +103,42 @@ public class DeferredRenderer : MonoBehaviour
     }
 
 
+
+    /// <summary>
+    /// Sets the tile of the screen to render
+    /// </summary>
+    /// <param name="screenTile"></param>
+    public void SetScreenTile(ScreenTile screenTile)
+    {
+        this.screenTile = screenTile;
+        gBuffer = this.gameObject.AddComponent<GBuffer>();
+        // Create gBuffer and composite buffer according to the size of the screen tile
+        gBuffer.Width = (int)(screenTile.TileSize.x * (float)Camera.main.pixelWidth);
+        gBuffer.Height = (int)(screenTile.TileSize.y * (float)Camera.main.pixelHeight);
+        
+       
+        gBuffer.Create();
+        compositeBuffer = GBuffer.CreateRenderTexture(gBuffer.Width, gBuffer.Height, 0, RenderTextureFormat.ARGBFloat);
+        compositeBuffer.filterMode = FilterMode.Trilinear;
+    }
+
+
+
+    void LateUpdate()
+    {
+        if (screenTile == null)
+            return;
+        Camera.main.projectionMatrix = screenTile.getOffCenterProjectionMatrix(Camera.main);
+    }
+
+
+
     /// <summary>
     /// 
     /// </summary>
     void OnEnable()
-    {
-        gBuffer = GetComponent<GBuffer>();
-        if (!gBuffer)
-        {
-            gBuffer = this.gameObject.AddComponent<GBuffer>();
-        }
-
+    {        
         camera = GetComponent<Camera>();
-
-        // Create a Render Texture for composing the image
-        compositeBuffer = GBuffer.CreateRenderTexture(camera.pixelWidth, camera.pixelHeight, 0, RenderTextureFormat.ARGBFloat);
-        compositeBuffer.filterMode = FilterMode.Trilinear;
-
     }
 
 
@@ -152,59 +164,9 @@ public class DeferredRenderer : MonoBehaviour
     }
 
 
-    void LateUpdate()
-    {
-
-        Camera cam = Camera.main;
 
 
-        top = cam.nearClipPlane * Mathf.Tan(cam.fieldOfView * Mathf.PI / 360.0f);
-        bottom = -top;
-
-        left = bottom * cam.aspect;
-        right = top * cam.aspect;
-
-        top *= scaleTop;
-        bottom *= scaleBottom;
-        left *= scaleLeft;
-        right *= scaleRight;
-
-        cam.projectionMatrix = PerspectiveOffCenter(left, right, bottom, top, cam.nearClipPlane, cam.farClipPlane);
-
-    }
-
-    //static Matrix4x4 Frustum(f)
-
-    static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far)
-    {
-
-        float x = 2.0F * near / (right - left);
-        float y = 2.0F * near / (top - bottom);
-        float a = (right + left) / (right - left);
-        float b = (top + bottom) / (top - bottom);
-        float c = -(far + near) / (far - near);
-        float d = -(2.0F * far * near) / (far - near);
-        float e = -1.0F;
-        Matrix4x4 m = new Matrix4x4();
-        //Matrix4x4.Perspective()
-        m[0, 0] = x;
-        m[0, 1] = 0;
-        m[0, 2] = a;
-        m[0, 3] = 0;
-        m[1, 0] = 0;
-        m[1, 1] = y;
-        m[1, 2] = b;
-        m[1, 3] = 0;
-        m[2, 0] = 0;
-        m[2, 1] = 0;
-        m[2, 2] = c;
-        m[2, 3] = d;
-        m[3, 0] = 0;
-        m[3, 1] = 0;
-        m[3, 2] = e;
-        m[3, 3] = 0;
-        return m;
-    }
+    
 
 
 
@@ -214,7 +176,7 @@ public class DeferredRenderer : MonoBehaviour
     void OnPostRender()
     {
         // Don't render if not active
-        if (!active) return;
+        if (!active || screenTile == null) return;
 
         // Store the current RenderTarget
         RenderTexture current = RenderTexture.active;

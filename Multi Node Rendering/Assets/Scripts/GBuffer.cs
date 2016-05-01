@@ -2,15 +2,17 @@
 using System.Collections;
 using UnityEngine.Rendering;
 
-[RequireComponent  (typeof(Camera))]
+
 public class GBuffer  : MonoBehaviour
 {
 
     public RenderTexture[] gBufferTextures;
     public RenderBuffer[] rtBuffers;
 
+    public int Width;
+    public int Height;
 
-    private Camera camera;
+    public Camera camera;
 
 
 
@@ -73,9 +75,8 @@ public class GBuffer  : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    void OnEnable()
+    public void Create()
     {
-        camera = this.gameObject.GetComponent<Camera>();
 
         gBufferTextures = new RenderTexture[4];
         rtBuffers = new RenderBuffer[4];
@@ -87,7 +88,7 @@ public class GBuffer  : MonoBehaviour
         {
             // Set depth on normalTexture, since it stores depth as well
             int depth = i == 0 ? 24 : 0;
-            gBufferTextures[i] = CreateRenderTexture(camera.pixelWidth, camera.pixelHeight, depth, RenderTextureFormat.ARGBFloat);
+            gBufferTextures[i] = CreateRenderTexture(Width, Height, depth, RenderTextureFormat.ARGBFloat);
             rtBuffers[i] = gBufferTextures[i].colorBuffer;
         }
     }

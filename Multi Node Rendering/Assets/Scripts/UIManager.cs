@@ -149,7 +149,7 @@ public class UIManager : MonoBehaviour
 
         // Updates viszualization of gBuffer textures
 
-        if (gBufferPanel.activeInHierarchy && gBuffer)
+        if (gBufferPanel.activeInHierarchy && gBuffer!= null)
         {
             albedoImage.texture = gBuffer.AlbedoBufferTexture;
             specularImage.texture = gBuffer.SpecularBufferTexture;

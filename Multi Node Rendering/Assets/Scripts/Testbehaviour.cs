@@ -40,7 +40,7 @@ public class TestBehaviour : MonoBehaviour
     void Update()
     {
        // Camera.main.Render();
-        this.gameObject.transform.Rotate(Vector3.up, 90.0f * Time.deltaTime);
+       // this.gameObject.transform.Rotate(Vector3.up, 90.0f * Time.deltaTime);
         
     }
 
