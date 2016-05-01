@@ -125,6 +125,7 @@ public class UIManager : MonoBehaviour
             normalsImage.texture = gBuffer.NormalBufferTexture;
             positionImage.texture = gBuffer.PositionBufferTexture;
         }
+        UpdateNetworkUI();
     }
 
     /// <summary>
@@ -161,6 +162,7 @@ public class UIManager : MonoBehaviour
                 break;
 
             case NetworkManager.ConnectionState.RUNNING_OFFLINE:
+
                 networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
                 networkStatusPanel.SetActive(false);
 
@@ -226,11 +228,4 @@ public class UIManager : MonoBehaviour
     {
         NetworkManager.Instance.State = NetworkManager.ConnectionState.NOT_CONNECTED;
     }
-
-    public void ShowGBuffer(bool enabled)
-    {
-        gBufferPanel.SetActive(enabled);
-    }
-
-
 }
