@@ -38,24 +38,50 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private GameObject networkConnectPanel;
     [SerializeField]
-    private Text ipTextField;
+    private Dropdown hostListDropdown;
     [SerializeField]
-    private Text portTextField;
+    private Button startRenderNodeButton;
     [SerializeField]
     private Toggle toggleNetworkInfo;
-
-
-
 
     //--------------------------------------------------------------------------------------
     // UI Elements for Network Status Panel
     //--------------------------------------------------------------------------------------
     [SerializeField]
     private GameObject networkStatusPanel;
+
     //--------------------------------------------------------------------------------------
     // Dataset to be displayed
     //--------------------------------------------------------------------------------------
     public GBuffer gBuffer;
+
+    //--------------------------------------------------------------------------------------
+    // Singleton instance
+    //--------------------------------------------------------------------------------------
+    private static UIManager instance;
+
+    /// <summary>
+    /// Returns the instance of this UIManager
+    /// </summary>
+    public static UIManager Instance
+    {
+        get { return instance; }
+    }
+
+    /// <summary>
+    /// This Function is called once the script awakes, even before Enable() and Start()
+    /// </summary>
+    private void Awake()
+    {
+        // Destroy other Instances of this script
+        if (instance && instance != this)
+        {
+            Destroy(this.gameObject);
+        }
+
+        instance = this;
+        DontDestroyOnLoad(this.gameObject);
+    }
 
 
     /// <summary>
@@ -77,79 +103,22 @@ public class UIManager : MonoBehaviour
         // Network Connect UI
         if (!toggleNetworkInfo) toggleNetworkInfo = GameObject.Find("ToggleNetworkInfo").GetComponent<Toggle>();
         if (!networkConnectPanel) networkConnectPanel = GameObject.Find("NetworkConnectPanel");
-        if (!ipTextField) ipTextField = GameObject.Find("IP").GetComponent<Text>();
-        if (!portTextField) portTextField = GameObject.Find("Port").GetComponent<Text>();
-
+        if (!hostListDropdown) hostListDropdown = GameObject.Find("HostListDropdown").GetComponent<Dropdown>();
+        if (!startRenderNodeButton) startRenderNodeButton = GameObject.Find("StartRenderNodeButton").GetComponent<Button>();
 
         // Network Status UI
         if (!networkStatusPanel) networkStatusPanel = GameObject.Find("NetworkStatusPanel");
 
+        UpdateNetworkUI();
     }
-
-
-
 
     /// <summary>
     /// Update is called once per frame
     /// </summary>
     void Update()
     {
-
-        // Show correct UI depending on Network State
-        switch (NetworkManager.Instance.State)
-        {
-            case NetworkManager.ConnectionState.NOT_CONNECTED:               
-                networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
-                networkStatusPanel.SetActive(false);
-                
-                toggleGBuffer.gameObject.SetActive(false);
-                gBufferPanel.SetActive(false);
-
-                // Remove this!!! Renderer State not changed by UI, but by NetworkManager later on!!
-                Camera.main.GetComponent<DeferredRenderer>().Active = false;
-
-                break;
-            
-            case NetworkManager.ConnectionState.RUNNING_OFFLINE:               
-                networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
-                networkStatusPanel.SetActive(false);
-                
-                toggleGBuffer.gameObject.SetActive(true);
-                gBufferPanel.SetActive(toggleGBuffer.isOn);
-
-
-                // Remove this!!! Renderer State not changed by UI, but by NetworkManager later on!!
-                Camera.main.GetComponent<DeferredRenderer>().Active = true;
-
-
-                break;
-            
-            case NetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE:               
-                networkConnectPanel.SetActive(false);
-                networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
-                
-                toggleGBuffer.gameObject.SetActive(true);
-                gBufferPanel.SetActive(toggleGBuffer.isOn);
-
-                // Remove this!!! Renderer State not changed by UI, but by NetworkManager later on!!
-                Camera.main.GetComponent<DeferredRenderer>().Active = true;
-                break;
-            
-            case NetworkManager.ConnectionState.RUNNING_AS_SERVER:
-                networkConnectPanel.SetActive(false);
-                networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
-                
-                toggleGBuffer.gameObject.SetActive(true);
-                gBufferPanel.SetActive(toggleGBuffer.isOn);
-
-                // Remove this!!! Renderer State not changed by UI, but by NetworkManager later on!!
-                Camera.main.GetComponent<DeferredRenderer>().Active = true;
-                break;
-        }
-
-        // Updates viszualization of gBuffer textures
-
-        if (gBufferPanel.activeInHierarchy && gBuffer!= null)
+        // Updates visualization of gBuffer textures
+        if (gBufferPanel.activeInHierarchy && gBuffer != null)
         {
             albedoImage.texture = gBuffer.AlbedoBufferTexture;
             specularImage.texture = gBuffer.SpecularBufferTexture;
@@ -158,8 +127,63 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the UI depending on the network state
+    /// </summary>
+    public void UpdateNetworkUI()
+    {
+        switch (NetworkManager.Instance.State)
+        {
+            case NetworkManager.ConnectionState.NOT_CONNECTED:
+                networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
+                networkStatusPanel.SetActive(false);
 
+                toggleGBuffer.gameObject.SetActive(false);
+                gBufferPanel.SetActive(false);
 
+                hostListDropdown.ClearOptions();
+                string[] hostNames = NetworkManager.Instance.GetHostNames();
+                if (hostNames == null || hostNames.Length == 0)
+                {
+                    hostListDropdown.options.Add(new Dropdown.OptionData("No Hosts available"));
+                    startRenderNodeButton.enabled = false;
+                    hostListDropdown.value = 0;
+                }
+                else
+                {
+                    for (int i = 0; i < hostNames.Length; i++)
+                    {
+                        hostListDropdown.options.Add(new Dropdown.OptionData(hostNames[i]));
+                    }
+                    startRenderNodeButton.enabled = true;
+                }
+                hostListDropdown.RefreshShownValue();
+                break;
+
+            case NetworkManager.ConnectionState.RUNNING_OFFLINE:
+                networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
+                networkStatusPanel.SetActive(false);
+
+                toggleGBuffer.gameObject.SetActive(true);
+                gBufferPanel.SetActive(toggleGBuffer.isOn);
+                break;
+
+            case NetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE:
+                networkConnectPanel.SetActive(false);
+                networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
+                toggleGBuffer.gameObject.SetActive(true);
+                gBufferPanel.SetActive(toggleGBuffer.isOn);
+                break;
+
+            case NetworkManager.ConnectionState.RUNNING_AS_SERVER:
+                networkConnectPanel.SetActive(false);
+                networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
+
+                toggleGBuffer.gameObject.SetActive(true);
+                gBufferPanel.SetActive(toggleGBuffer.isOn);
+                break;
+        }
+    }
 
     /// <summary>
     /// Starts a new Server (Composer) 
@@ -167,23 +191,16 @@ public class UIManager : MonoBehaviour
     public void StartServerButtonClicked()
     {
         NetworkManager.Instance.State = NetworkManager.ConnectionState.RUNNING_AS_SERVER;
-        // TODO: Start Server
     }
-
-
-
 
     /// <summary>
     /// Connects a Render Node to the given Server using the ip/port information
     /// </summary>
     public void StartClientButtonClicked()
     {
+        NetworkManager.Instance.SetHost(hostListDropdown.value);
         NetworkManager.Instance.State = NetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE;
-        // TODO: Connect to Server
     }
-
-
-
 
     /// <summary>
     /// Starts the Rendering in Offline Mode
@@ -191,32 +208,29 @@ public class UIManager : MonoBehaviour
     public void OfflineModeButtonClicked()
     {
         NetworkManager.Instance.State = NetworkManager.ConnectionState.RUNNING_OFFLINE;
-        // TODO: Start Offline Mode (Use the DeferredRenderer)
     }
 
-
-
+    /// <summary>
+    /// Starts the Rendering in Offline Mode
+    /// </summary>
+    public void RefreshHostsButtonClicked()
+    {
+        NetworkManager.Instance.RefreshHostList();
+        UpdateNetworkUI();
+    }
 
     /// <summary>
     /// Disconnects the current application from the network
     /// </summary>
     public void DisconnectButtonClicked()
     {
-        if (NetworkManager.Instance.State == NetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE)
-        {
-            // TODO: Close connection to Server
-        }
-        if (NetworkManager.Instance.State == NetworkManager.ConnectionState.RUNNING_AS_SERVER)
-        {
-            // TODO: Close Server and connections to all clients
-        }
-
         NetworkManager.Instance.State = NetworkManager.ConnectionState.NOT_CONNECTED;
     }
 
-
-
-
+    public void ShowGBuffer(bool enabled)
+    {
+        gBufferPanel.SetActive(enabled);
+    }
 
 
 }
