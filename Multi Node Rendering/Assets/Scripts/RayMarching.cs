@@ -19,7 +19,14 @@ public class RayMarching : MonoBehaviour
     public Material RayMarchMaterial;
     public Material BackDepthMaterial;
     public Material FrontDepthMaterial;
-    
+    public ScreenTile screenTile;
+
+    public void LateUpdate()
+    {
+        if (screenTile == null)
+            return;
+        Camera.main.projectionMatrix = screenTile.getOffCenterProjectionMatrix(Camera.main);
+    }
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         // If volume texture null
