@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(Camera))]
 public class DeferredRenderer : MonoBehaviour
 {
-    private ScreenTile screenTile;
+    private PerspectiveTile screenTile;
 
 
     /// <summary>
@@ -108,13 +108,13 @@ public class DeferredRenderer : MonoBehaviour
     /// Sets the tile of the screen to render
     /// </summary>
     /// <param name="screenTile"></param>
-    public void SetScreenTile(ScreenTile screenTile)
+    public void SetScreenTile(PerspectiveTile screenTile)
     {
         this.screenTile = screenTile;
         gBuffer = this.gameObject.AddComponent<GBuffer>();
         // Create gBuffer and composite buffer according to the size of the screen tile
-        gBuffer.Width = (int)(screenTile.TileSize.x * (float)Camera.main.pixelWidth);
-        gBuffer.Height = (int)(screenTile.TileSize.y * (float)Camera.main.pixelHeight);
+        gBuffer.Width = (int)(screenTile.Size.x * (float)Camera.main.pixelWidth);
+        gBuffer.Height = (int)(screenTile.Size.y * (float)Camera.main.pixelHeight);
         
        
         gBuffer.Create();
@@ -128,7 +128,7 @@ public class DeferredRenderer : MonoBehaviour
     {
         if (screenTile == null)
             return;
-        Camera.main.projectionMatrix = screenTile.getOffCenterProjectionMatrix(Camera.main);
+        Camera.main.projectionMatrix = screenTile.getOffCenterProjectionMatrix();
     }
 
 
