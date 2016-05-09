@@ -4,7 +4,7 @@ using System.Collections;
 /// <summary>
 /// A screen tile represents a part of the screen of the MAIN camera. 
 /// </summary>
-public class PerspectiveTile 
+public class ScreenTile 
 {
     public float fov;
     public float np;

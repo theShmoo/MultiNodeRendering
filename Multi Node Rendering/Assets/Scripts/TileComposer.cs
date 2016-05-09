@@ -6,13 +6,13 @@ public class TileComposer : MonoBehaviour
 
     private Vector2 numTiles = new Vector2(2, 2);
 
-    private List<PerspectiveTile> tiles;  
+    private List<ScreenTile> tiles;  
     private Dictionary<Vector2, Texture2D> tileImages;
 
     public Texture2D[] imageArray;
 	// Use this for initialization
 	void Start () {
-        tiles = new List<PerspectiveTile>();
+        tiles = new List<ScreenTile>();
         tileImages = new Dictionary<Vector2, Texture2D>();
 
         NumTilesChanged(numTiles);
@@ -80,7 +80,7 @@ public class TileComposer : MonoBehaviour
             for (int j = 0; j < numTiles.y; j++)
             {
 
-                PerspectiveTile tile = new PerspectiveTile();
+                ScreenTile tile = new ScreenTile();
                 tile.tileIndex = new Vector2(i, j);
                 tile.numTiles = new Vector2(numTiles.x, numTiles.y);
 

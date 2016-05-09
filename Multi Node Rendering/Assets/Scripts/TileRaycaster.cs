@@ -1,20 +1,28 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-
-public class RayCastState : StateObject
+/// <summary>
+/// This class represents a state structure for the scene/animation for distributed rendering systems to transmit all neccessary parameters to the render node
+/// </summary>
+public class RayCastState
 {
+    public long deltaTime;
+
     public Matrix4x4 viewMatrix;
+
     public Matrix4x4 projectionMatrix;
 
     public Matrix4x4 volumeWorldMatrix;
 }
 
+/// <summary>
+/// Performs raycast rendering of the scene to the given tile
+/// </summary>
 public class TileRaycaster : MonoBehaviour
 {
 
     // A collection to store all tiles to be rendered
-    private PerspectiveTile tile;
+    private ScreenTile tile;
 
     // A collection to store all rendered images
     private Texture2D tileImage;
@@ -59,7 +67,7 @@ public class TileRaycaster : MonoBehaviour
     /// 
     /// </summary>
     /// <param name="tile"></param>
-    public void SetTile(PerspectiveTile tile)
+    public void SetTile(ScreenTile tile)
     {
         if(this.tile == null || this.tile.numTiles.x != tile.numTiles.x || this.tile.numTiles.y != tile.numTiles.y)
         {

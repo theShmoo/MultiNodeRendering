@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(Camera))]
 public class DeferredRenderer : MonoBehaviour
 {
-    private PerspectiveTile screenTile;
+    private ScreenTile screenTile;
 
 
     /// <summary>
@@ -108,7 +108,7 @@ public class DeferredRenderer : MonoBehaviour
     /// Sets the tile of the screen to render
     /// </summary>
     /// <param name="screenTile"></param>
-    public void SetScreenTile(PerspectiveTile screenTile)
+    public void SetScreenTile(ScreenTile screenTile)
     {
         this.screenTile = screenTile;
         gBuffer = this.gameObject.AddComponent<GBuffer>();
