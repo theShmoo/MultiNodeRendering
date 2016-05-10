@@ -11,6 +11,8 @@ public class ScreenTile
     public float fp;
     public float aspect;
 
+    public Texture2D renderedImage;
+
     /// <summary>
     /// The number of tiles
     /// </summary>
@@ -55,12 +57,12 @@ public class ScreenTile
 
         // Scale viewport rect to the tile position
         float sl = 1.0f - (2.0f * tileIndex.x / numTiles.x);
-        float sn = -(sl - 2.0f / numTiles.x);
+        float sr = -(sl - 2.0f / numTiles.x);
         float sb = 1.0f - (2.0f * tileIndex.y / numTiles.y);
         float st = -(sb - 2.0f / numTiles.y);
         
         left    *= sl;
-        right   *= sn;
+        right   *= sr;
         bottom  *= sb;
         top     *= st;
 

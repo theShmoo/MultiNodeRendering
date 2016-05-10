@@ -4,16 +4,18 @@ using System.Collections.Generic;
 public class TileComposer : MonoBehaviour
 {
 
-    private Vector2 numTiles = new Vector2(2, 2);
+    private Vector2 numTiles = new Vector2(1,1);
 
-    private List<ScreenTile> tiles;  
-    private Dictionary<Vector2, Texture2D> tileImages;
+    private List<ScreenTile> tiles;
+    public List<Texture2D> renderedImages;
 
-    public Texture2D[] imageArray;
-	// Use this for initialization
+    public Material texturedQuadMaterial;
+
+	
+    // Use this for initialization
 	void Start () {
         tiles = new List<ScreenTile>();
-        tileImages = new Dictionary<Vector2, Texture2D>();
+        renderedImages = new List<Texture2D>();
 
         NumTilesChanged(numTiles);
 	}
@@ -25,16 +27,16 @@ public class TileComposer : MonoBehaviour
 
         // Set current state to TileRaycaster
         RayCastState state = new RayCastState();
-        state.volumeWorldMatrix = this.transform.localToWorldMatrix;
+        state.volumeWorldMatrix = Matrix4x4.identity;
         state.viewMatrix = Camera.main.worldToCameraMatrix;
         state.projectionMatrix = Camera.main.projectionMatrix;
 
         rayCaster.SetSceneState(state);
 
-        imageArray = new Texture2D[tiles.Count];
-        int idx = 0;
-        foreach (var tile in tiles)
+        // Render each tile
+        for (int i = 0; i < tiles.Count; i++)       
         {
+            ScreenTile tile = tiles[i];
 
             rayCaster.SetTile(tile);
             rayCaster.RenderTile();
@@ -42,19 +44,90 @@ public class TileComposer : MonoBehaviour
             int width  = (int)(Screen.width / numTiles.x);
             int height = (int)(Screen.height / numTiles.y);
 
-            Texture2D img = tileImages[tile.tileIndex];
+            // Store content in Texture2D
             Graphics.SetRenderTarget(rayCaster.GetRenderedImage());
-            img.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
-            
+
+            Texture2D img = renderedImages[i];    
+            img.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);           
             img.Apply();
-            imageArray[idx] = img;
-            idx++;
+        }             
+	}
+
+
+    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        Graphics.SetRenderTarget(dest);
+
+        for (int i = 0; i < tiles.Count; i++ )
+        {
+            
+            //GL.Clear(true, true, Color.red);
+            Vector2 tileIndex = tiles[i].tileIndex;
+            Vector2 numTiles = tiles[i].numTiles;
+            Texture2D image = renderedImages[i];
+
+            
+            // Create Scale and translation Matrix
+            Vector3 scale = new Vector3(1.0f / numTiles.x, 1.0f / numTiles.y, 1.0f);
+            Vector3 translate = new Vector3((tileIndex.x / (numTiles.x - 1.0f) - 0.5f) * -1.0f, 0.0f, 0.0f);
+            
+            Matrix4x4 M = Matrix4x4.TRS(translate, Quaternion.identity, scale);
+            
+            
+             
+            texturedQuadMaterial.SetTexture("_MainTex", image);
+            texturedQuadMaterial.SetPass(0);          
+
+           
+
+            // Scale viewport rect to the tile position
+            float sl = 1.0f - (2.0f * tileIndex.x / numTiles.x);
+            float sr = -(sl - 2.0f / numTiles.x);
+            float sb = 1.0f - (2.0f * tileIndex.y / numTiles.y);
+            float st = -(sb - 2.0f / numTiles.y);
+
+            float left   =  -1 * sl;
+            float right  = 1 * sr;
+            float bottom = -1 * sb;
+            float top   = 1 * st;
+
+
+
+            GL.Begin(GL.QUADS);
+            {
+                //GL.TexCoord2(0.0f, 0.0f);
+                //GL.Vertex3(-left, -1.0f, 1.0f);
+
+                //GL.TexCoord2(1.0f, 0.0f);
+                //GL.Vertex3(1.0f, -1.0f, 1.0f);
+
+                //GL.TexCoord2(1.0f, 1.0f);
+                //GL.Vertex3(1.0f, 1.0f, 1.0f);
+
+                //GL.TexCoord2(0.0f, 1.0f);
+                //GL.Vertex3(-1.0f, 1.0f, 1.0f);
+
+                GL.TexCoord2(0.0f, 0.0f);
+                GL.Vertex3(left, bottom, 0.0f);
+
+                GL.TexCoord2(1.0f, 0.0f);
+                GL.Vertex3(right, bottom, 0.0f);
+
+                GL.TexCoord2(1.0f, 1.0f);
+                GL.Vertex3(right, top, 0.0f);
+
+                GL.TexCoord2(0.0f, 1.0f);
+                GL.Vertex3(left, top, 0.0f);
+                
+                                
+            }
+            GL.End();
+            //break;
         }
 
-       
+       // Graphics.Blit(src, dest);
         
-        //tileImages = rayCaster.GetRenderedImages();
-	}
+    }
 
     /// <summary>
     /// 
@@ -68,7 +141,7 @@ public class TileComposer : MonoBehaviour
         // Dispose old tiles
         tiles.Clear();
         // Dispose old textures
-        tileImages.Clear();
+        renderedImages.Clear();
 
         
         int width  = (int)(Screen.width / numTiles.x);
@@ -89,12 +162,15 @@ public class TileComposer : MonoBehaviour
                 tile.fp = Camera.main.farClipPlane;
                 tile.aspect = Camera.main.aspect;
 
-                tile.screenHeight = Screen.width;
-                tile.screenWidth = Screen.height;
+                tile.screenWidth = Screen.width;
+                tile.screenHeight = Screen.height;
+                
 
+                
                 tiles.Add(tile);
-                // Create a dictionary entry for the tile
-                tileImages[tile.tileIndex] = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
+                Texture2D tex = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
+                tex.wrapMode = TextureWrapMode.Clamp;
+                renderedImages.Add(tex);
             }
         }
     }
