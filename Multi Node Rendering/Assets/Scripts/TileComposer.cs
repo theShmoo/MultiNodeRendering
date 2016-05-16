@@ -4,25 +4,22 @@ using System.Collections.Generic;
 public class TileComposer : MonoBehaviour
 {
 
-    private Vector2 numTiles = new Vector2(1,1);
+    private Vector2 numTiles = new Vector2(2,2);
 
     private List<ScreenTile> tiles;
     public List<Texture2D> renderedImages;
 
     public Material texturedQuadMaterial;
 
-	
     // Use this for initialization
 	void Start () {
         tiles = new List<ScreenTile>();
         renderedImages = new List<Texture2D>();
-
         NumTilesChanged(numTiles);
 	}
 	
 	// Update is called once per frame
 	void Update () {
-
         TileRaycaster rayCaster = Camera.main.GetComponent<TileRaycaster>();
 
         // Set current state to TileRaycaster
@@ -34,34 +31,32 @@ public class TileComposer : MonoBehaviour
         rayCaster.SetSceneState(state);
 
         // Render each tile
-        for (int i = 0; i < tiles.Count; i++)       
+        for (int i = 0; i < tiles.Count; i++)
         {
             ScreenTile tile = tiles[i];
 
             rayCaster.SetTile(tile);
             rayCaster.RenderTile();
 
-            int width  = (int)(Screen.width / numTiles.x);
+            int width = (int)(Screen.width / numTiles.x);
             int height = (int)(Screen.height / numTiles.y);
 
             // Store content in Texture2D
             Graphics.SetRenderTarget(rayCaster.GetRenderedImage());
 
-            Texture2D img = renderedImages[i];    
-            img.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);           
+            Texture2D img = renderedImages[i];
+            img.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
             img.Apply();
-        }             
+        }
 	}
-
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
         Graphics.SetRenderTarget(dest);
+        GL.Clear(true, true, Color.black);
 
         for (int i = 0; i < tiles.Count; i++ )
         {
-            
-            //GL.Clear(true, true, Color.red);
             Vector2 tileIndex = tiles[i].tileIndex;
             Vector2 numTiles = tiles[i].numTiles;
             Texture2D image = renderedImages[i];
@@ -73,12 +68,8 @@ public class TileComposer : MonoBehaviour
             
             Matrix4x4 M = Matrix4x4.TRS(translate, Quaternion.identity, scale);
             
-            
-             
             texturedQuadMaterial.SetTexture("_MainTex", image);
-            texturedQuadMaterial.SetPass(0);          
-
-           
+            texturedQuadMaterial.SetPass(0);
 
             // Scale viewport rect to the tile position
             float sl = 1.0f - (2.0f * tileIndex.x / numTiles.x);

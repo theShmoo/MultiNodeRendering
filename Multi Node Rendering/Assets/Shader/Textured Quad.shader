@@ -12,7 +12,7 @@
 		Pass
 		{
 			CGPROGRAM
-			#pragma vertex vert
+			#pragma vertex vert_img
 			#pragma fragment frag
 			
 			#include "UnityCG.cginc"
@@ -30,22 +30,12 @@
 			};
 
 			sampler2D _MainTex;
-			float4x4 _matrix;
+			float4x4 _matrix;		
 
-			v2f vert (appdata v)
-			{
-				v2f o;
-				o.vertex = v.vertex;
-				o.texcoords = v.texcoords;
-				return o;
-			}			
-
-			fixed4 frag (v2f i) : SV_Target
+			fixed4 frag (v2f_img i) : COLOR
 			{
 				
-				fixed4 col = tex2D(_MainTex, i.texcoords);
-				// just invert the colors
-				//col = 1 - col;
+				float4 col = tex2D(_MainTex, i.uv);
 				return col;
 			}
 			ENDCG

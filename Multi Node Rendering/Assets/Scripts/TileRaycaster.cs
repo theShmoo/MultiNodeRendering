@@ -167,7 +167,7 @@ public class TileRaycaster : MonoBehaviour
 
     void Update()
     {
-        RenderTile();
+        //RenderTile();
     }
 
     /// <summary>
