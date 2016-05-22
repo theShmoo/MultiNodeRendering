@@ -12,7 +12,7 @@ public class GBuffer  : MonoBehaviour
     public int Width;
     public int Height;
 
-    public Camera camera;
+    public Camera myCamera;
 
 
 

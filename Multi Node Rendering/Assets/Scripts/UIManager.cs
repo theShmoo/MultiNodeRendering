@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 
@@ -40,7 +42,13 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private Dropdown hostListDropdown;
     [SerializeField]
+    private InputField numberTilesWidth;
+    [SerializeField]
+    private InputField numberTilesHeight;
+    [SerializeField]
     private Button startRenderNodeButton;
+    [SerializeField]
+    private Button changeNumberOfTilesButton;
     [SerializeField]
     private Toggle toggleNetworkInfo;
 
@@ -49,6 +57,9 @@ public class UIManager : MonoBehaviour
     //--------------------------------------------------------------------------------------
     [SerializeField]
     private GameObject networkStatusPanel;
+
+    [SerializeField]
+    private GameObject networkServerPanel;
 
     //--------------------------------------------------------------------------------------
     // Dataset to be displayed
@@ -89,25 +100,31 @@ public class UIManager : MonoBehaviour
     /// </summary>
     void Start()
     {
-        if (!gBuffer) gBuffer = Camera.main.GetComponent<GBuffer>();
+//        if (!gBuffer) gBuffer = Camera.main.GetComponent<GBuffer>();
 
         // GBuffer UI
-        if (!toggleGBuffer) toggleGBuffer = GameObject.Find("ToggleGBufferInfo").GetComponent<Toggle>();
-        if (!gBufferPanel) gBufferPanel = GameObject.Find("GBufferPanel");
-        if (!albedoImage) albedoImage = GameObject.Find("DiffuseImage").GetComponent<RawImage>();
-        if (!specularImage) specularImage = GameObject.Find("SpecularImage").GetComponent<RawImage>();
-        if (!normalsImage) normalsImage = GameObject.Find("NormalsImage").GetComponent<RawImage>();
-        if (!positionImage) positionImage = GameObject.Find("PositionImage").GetComponent<RawImage>();
+//         if (!toggleGBuffer) toggleGBuffer = GameObject.Find("ToggleGBufferInfo").GetComponent<Toggle>();
+//         if (!gBufferPanel) gBufferPanel = GameObject.Find("GBufferPanel");
+//         if (!albedoImage) albedoImage = GameObject.Find("DiffuseImage").GetComponent<RawImage>();
+//         if (!specularImage) specularImage = GameObject.Find("SpecularImage").GetComponent<RawImage>();
+//         if (!normalsImage) normalsImage = GameObject.Find("NormalsImage").GetComponent<RawImage>();
+//         if (!positionImage) positionImage = GameObject.Find("PositionImage").GetComponent<RawImage>();
 
 
         // Network Connect UI
         if (!toggleNetworkInfo) toggleNetworkInfo = GameObject.Find("ToggleNetworkInfo").GetComponent<Toggle>();
         if (!networkConnectPanel) networkConnectPanel = GameObject.Find("NetworkConnectPanel");
         if (!hostListDropdown) hostListDropdown = GameObject.Find("HostListDropdown").GetComponent<Dropdown>();
+        if (!numberTilesWidth) numberTilesWidth = GameObject.Find("TilesWidthInput").GetComponent<InputField>();
+        numberTilesWidth.contentType = InputField.ContentType.IntegerNumber;
+        if (!numberTilesHeight) numberTilesHeight = GameObject.Find("TilesHeightInput").GetComponent<InputField>();
+        numberTilesHeight.contentType = InputField.ContentType.IntegerNumber;
         if (!startRenderNodeButton) startRenderNodeButton = GameObject.Find("StartRenderNodeButton").GetComponent<Button>();
+        if (!changeNumberOfTilesButton) changeNumberOfTilesButton = GameObject.Find("ChangeNumberTilesButton").GetComponent<Button>();
 
         // Network Status UI
         if (!networkStatusPanel) networkStatusPanel = GameObject.Find("NetworkStatusPanel");
+        if (!networkServerPanel) networkServerPanel = GameObject.Find("NetworkServerPanel");
 
         UpdateNetworkUI();
     }
@@ -125,7 +142,7 @@ public class UIManager : MonoBehaviour
             normalsImage.texture = gBuffer.NormalBufferTexture;
             positionImage.texture = gBuffer.PositionBufferTexture;
         }
-        UpdateNetworkUI();
+        //UpdateNetworkUI();
     }
 
     /// <summary>
@@ -133,18 +150,19 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void UpdateNetworkUI()
     {
-        switch (NetworkManager.Instance.State)
+        switch (MyNetworkManager.Instance.State)
         {
-            case NetworkManager.ConnectionState.NOT_CONNECTED:
+            case MyNetworkManager.ConnectionState.NOT_CONNECTED:
                 networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
                 networkStatusPanel.SetActive(false);
+                networkServerPanel.SetActive(false);
 
-                toggleGBuffer.gameObject.SetActive(false);
-                gBufferPanel.SetActive(false);
+                //toggleGBuffer.gameObject.SetActive(false);
+                //gBufferPanel.SetActive(false);
 
                 hostListDropdown.ClearOptions();
-                string[] hostNames = NetworkManager.Instance.GetHostNames();
-                if (hostNames == null || hostNames.Length == 0)
+                List<string> hostNames = MyNetworkManager.Instance.GetHostNames();
+                if (hostNames == null || hostNames.Count == 0)
                 {
                     hostListDropdown.options.Add(new Dropdown.OptionData("No Hosts available"));
                     startRenderNodeButton.enabled = false;
@@ -152,37 +170,42 @@ public class UIManager : MonoBehaviour
                 }
                 else
                 {
-                    for (int i = 0; i < hostNames.Length; i++)
+                    foreach (string hostName in hostNames)
                     {
-                        hostListDropdown.options.Add(new Dropdown.OptionData(hostNames[i]));
+                        hostListDropdown.options.Add(new Dropdown.OptionData(hostName));
                     }
                     startRenderNodeButton.enabled = true;
                 }
                 hostListDropdown.RefreshShownValue();
                 break;
 
-            case NetworkManager.ConnectionState.RUNNING_OFFLINE:
+            case MyNetworkManager.ConnectionState.RUNNING_OFFLINE:
 
                 networkConnectPanel.SetActive(toggleNetworkInfo.isOn);
                 networkStatusPanel.SetActive(false);
 
-                toggleGBuffer.gameObject.SetActive(true);
-                gBufferPanel.SetActive(toggleGBuffer.isOn);
+                //toggleGBuffer.gameObject.SetActive(true);
+                //gBufferPanel.SetActive(toggleGBuffer.isOn);
+
                 break;
 
-            case NetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE:
-                networkConnectPanel.SetActive(false);
-                networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
-                toggleGBuffer.gameObject.SetActive(true);
-                gBufferPanel.SetActive(toggleGBuffer.isOn);
-                break;
-
-            case NetworkManager.ConnectionState.RUNNING_AS_SERVER:
+            case MyNetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE:
                 networkConnectPanel.SetActive(false);
                 networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
 
-                toggleGBuffer.gameObject.SetActive(true);
-                gBufferPanel.SetActive(toggleGBuffer.isOn);
+                //toggleGBuffer.gameObject.SetActive(true);
+                //gBufferPanel.SetActive(toggleGBuffer.isOn);
+
+                break;
+
+            case MyNetworkManager.ConnectionState.RUNNING_AS_SERVER:
+                networkConnectPanel.SetActive(false);
+                networkStatusPanel.SetActive(toggleNetworkInfo.isOn);
+                networkServerPanel.SetActive(toggleNetworkInfo.isOn);
+
+                //toggleGBuffer.gameObject.SetActive(true);
+                //gBufferPanel.SetActive(toggleGBuffer.isOn);
+
                 break;
         }
     }
@@ -192,7 +215,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void StartServerButtonClicked()
     {
-        NetworkManager.Instance.State = NetworkManager.ConnectionState.RUNNING_AS_SERVER;
+        MyNetworkManager.Instance.State = MyNetworkManager.ConnectionState.RUNNING_AS_SERVER;
     }
 
     /// <summary>
@@ -200,8 +223,8 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void StartClientButtonClicked()
     {
-        NetworkManager.Instance.SetHost(hostListDropdown.value);
-        NetworkManager.Instance.State = NetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE;
+        MyNetworkManager.Instance.SetHost(hostListDropdown.value);
+        MyNetworkManager.Instance.State = MyNetworkManager.ConnectionState.RUNNING_AS_RENDER_NODE;
     }
 
     /// <summary>
@@ -209,7 +232,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void OfflineModeButtonClicked()
     {
-        NetworkManager.Instance.State = NetworkManager.ConnectionState.RUNNING_OFFLINE;
+        MyNetworkManager.Instance.State = MyNetworkManager.ConnectionState.RUNNING_OFFLINE;
     }
 
     /// <summary>
@@ -217,7 +240,7 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void RefreshHostsButtonClicked()
     {
-        NetworkManager.Instance.RefreshHostList();
+        MyNetworkManager.Instance.RefreshHostList();
         UpdateNetworkUI();
     }
 
@@ -226,6 +249,20 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void DisconnectButtonClicked()
     {
-        NetworkManager.Instance.State = NetworkManager.ConnectionState.NOT_CONNECTED;
+        MyNetworkManager.Instance.State = MyNetworkManager.ConnectionState.NOT_CONNECTED;
+    }
+
+    /// <summary>
+    /// Changes the number of tiles of the current server
+    /// </summary>
+    public void ChangeNumberTilesButtonClicked()
+    {
+        int iNumTilesWidth = 0;
+        int iNumTilesHeight = 0;
+        bool parsed = Int32.TryParse(numberTilesWidth.text, out iNumTilesWidth);
+        if (parsed)
+            Int32.TryParse(numberTilesHeight.text, out iNumTilesHeight);
+        if (parsed && iNumTilesWidth > 0 && iNumTilesHeight > 0)
+            MyNetworkManager.Instance.SetNumberOfTiles(iNumTilesWidth,iNumTilesHeight);
     }
 }

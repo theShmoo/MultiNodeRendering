@@ -1,10 +1,22 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections;
+using System.Collections.Generic;
+
+public class MyMsgTypes
+{
+    public static short MSG_CAMERA_TRANSFORM = 1000;
+};
+
+public class CameraTransformMessage : MessageBase
+{
+    public Transform cameraTransform;
+};
 
 /// <summary>
 /// This Script handles the network management between the server and the render nodes (client)
 /// </summary>
-public class NetworkManager : MonoBehaviour
+public class MyNetworkManager : MonoBehaviour
 {
 
     public enum ConnectionState
@@ -15,7 +27,7 @@ public class NetworkManager : MonoBehaviour
     /// <summary>
     // Singleton instance
     /// </summary>
-    private static NetworkManager instance;
+    private static MyNetworkManager instance;
     /// <summary>
     // Current connection state
     /// </summary>
@@ -31,33 +43,40 @@ public class NetworkManager : MonoBehaviour
     /// <summary>
     ///  A list of hosts to connect to
     /// </summary>
-    private HostData[] hostList;
+    private List<HostData> hostList;
     /// <summary>
     /// The selected host that this render node will connect to or is connect to
     /// </summary>
     private HostData selectedHost = null;
 
+    NetworkClient myClient;
+
+    /// <summary>
+    /// A list of all connected nodes.
+    /// </summary>
+    private List<NetworkPlayer> connectedNodes; 
+
     /// <summary>
     // The name of the server to register on the master server
     /// </summary>
-    public const string TYPE_NAME= "MultiNodeRendering";
+    public string typeName= "MultiNodeRendering";
     /// <summary>
     // The name of the instance of the server on the master server
     /// </summary>
-    public const string GAME_NAME = "Server";
+    public string gameName = "Server";
     /// <summary>
     ///  maximum nummer of connections
     /// </summary>
-    private const int MAX_NUMBER_CONNECTIONS = 1;
+    private int iMaxNumberOfConnections = 4;
     /// <summary>
     /// The port of the server
     /// </summary>
-    public const int PORT = 4000;
+    public int port = 4000;
 
     /// <summary>
     /// Returns the instance of this NetworkManager
     /// </summary>
-    public static NetworkManager Instance
+    public static MyNetworkManager Instance
     {
         get { return instance; }
     }
@@ -75,15 +94,17 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-    public string[] GetHostNames()
+    public List<string> GetHostNames()
     {
         if(hostList == null)
         {
             return null;
         }
-        string[] hostNames = new string[hostList.Length];
-        for (int i = 0; i < hostList.Length; i++ )
-            hostNames[i] = hostList[i].gameType;
+        List<string> hostNames = new List<string>(hostList.Count);
+        foreach (HostData host in hostList)
+        {
+            hostNames.Add(host.gameType);
+        }
         return hostNames;
     }
 
@@ -109,27 +130,38 @@ public class NetworkManager : MonoBehaviour
     {
         previousState = ConnectionState.NOT_CONNECTED;
         state = ConnectionState.NOT_CONNECTED;
+
+        hostList = new List<HostData>();
+
+        connectedNodes = new List<NetworkPlayer>();
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (State == ConnectionState.RUNNING_AS_SERVER)
+        {
+            var msg = new CameraTransformMessage();
+            msg.cameraTransform = Camera.main.gameObject.transform;
 
+            NetworkServer.SendToAll(MyMsgTypes.MSG_CAMERA_TRANSFORM, msg);
+        }
     }
 
     /// <summary>
     /// Disconnects from the server if it is a render node
     /// Disconnects all render nodes if it is a server
     /// </summary>
-    private void Disconnect(ConnectionState state)
+    private void Disconnect(ConnectionState _state)
     {
-        if (state == ConnectionState.RUNNING_AS_SERVER)
+        if (_state == ConnectionState.RUNNING_AS_SERVER)
         {
-            Debug.Log("Server Disconnected!");
+            Network.Disconnect();
+            MasterServer.UnregisterHost();
         }
-        else if(state == ConnectionState.RUNNING_AS_RENDER_NODE)
+        else if (_state == ConnectionState.RUNNING_AS_RENDER_NODE)
         {
-            Debug.Log("Render Node Disconnected!");
+            Network.Disconnect();
         }
         else
         {
@@ -142,14 +174,14 @@ public class NetworkManager : MonoBehaviour
     /// </summary>
     private void OnStateChanged()
     {
-        switch (state)
+        switch (State)
         {
             case ConnectionState.NOT_CONNECTED:
                 if (previousState == ConnectionState.RUNNING_AS_RENDER_NODE || previousState == ConnectionState.RUNNING_AS_SERVER)
                 {
                     Disconnect(previousState);
                 }
-                Camera.main.GetComponent<DeferredRenderer>().Active = false;
+                Camera.main.GetComponent<TileComposer>().Active = false;
                 break;
 
             case ConnectionState.RUNNING_OFFLINE:
@@ -157,13 +189,13 @@ public class NetworkManager : MonoBehaviour
                 {
                     Disconnect(previousState);
                 }
-                Camera.main.GetComponent<DeferredRenderer>().Active = true;
+                Camera.main.GetComponent<TileComposer>().Active = true;
                 break;
 
             case ConnectionState.RUNNING_AS_RENDER_NODE:
                 if (previousState == ConnectionState.NOT_CONNECTED || previousState == ConnectionState.RUNNING_OFFLINE)
                 {
-                   // JoinServer();
+                   JoinServer();
                 }
                 else
                 {
@@ -186,8 +218,8 @@ public class NetworkManager : MonoBehaviour
     /// </summary>
     private void StartServer()
     {
-        Network.InitializeServer(MAX_NUMBER_CONNECTIONS, PORT, !Network.HavePublicAddress());
-        MasterServer.RegisterHost(TYPE_NAME, GAME_NAME);
+        Network.InitializeServer(iMaxNumberOfConnections, port, !Network.HavePublicAddress());
+        MasterServer.RegisterHost(typeName, gameName);
     }
 
     /// <summary>
@@ -204,17 +236,53 @@ public class NetworkManager : MonoBehaviour
     private void JoinServer()
     {
         if (selectedHost != null)
-            Network.Connect(selectedHost);
+        {
+            myClient = new NetworkClient();
+            myClient.RegisterHandler(MyMsgTypes.MSG_CAMERA_TRANSFORM, OnCameraTransformMessage);
+            myClient.Connect(selectedHost.ip[0], selectedHost.port);
+        }
         else
             Debug.Log("No Host Selected");
     }
 
     /// <summary>
-    /// 
+    /// When a client joins a server the client gets this notification
     /// </summary>
     void OnConnectedToServer()
     {
-        Debug.Log("Server Joined");
+        Debug.Log("Server Joined ");
+    }
+
+    /// <summary>
+    /// When a client disconnects from a server the client gets this notification
+    /// </summary>
+    void OnDisconnectedFromServer(NetworkDisconnection info)
+    {
+        Debug.Log("Disconnected from server: " + info);
+        if (State == ConnectionState.RUNNING_AS_RENDER_NODE)
+        {
+            State = ConnectionState.NOT_CONNECTED;
+        }
+    }
+
+    /// <summary>
+    /// When a client joins a server the server gets this notification
+    /// </summary>
+    void OnPlayerConnected(NetworkPlayer player)
+    {
+        Debug.Log("Player connected from " + player.ipAddress + ":" + player.port);
+        connectedNodes.Add(player);
+    }
+
+    /// <summary>
+    /// When a client disconnects from a server the server gets this notification
+    /// </summary>
+    void OnPlayerDisconnected(NetworkPlayer player)
+    {
+        Debug.Log("Clean up after player " + player);
+        connectedNodes.Remove(player);
+        Network.RemoveRPCs(player);
+        Network.DestroyPlayerObjects(player);
     }
 
     /// <summary>
@@ -225,7 +293,7 @@ public class NetworkManager : MonoBehaviour
         if (!isRefreshingHostList)
         {
             isRefreshingHostList = true;
-            MasterServer.RequestHostList(NetworkManager.TYPE_NAME);
+            MasterServer.RequestHostList(typeName);
         }
     }
 
@@ -235,14 +303,43 @@ public class NetworkManager : MonoBehaviour
     void OnMasterServerEvent(MasterServerEvent msEvent)
     {
         if (msEvent == MasterServerEvent.HostListReceived)
-            hostList = MasterServer.PollHostList();
+        {
+            HostData[] hosts = MasterServer.PollHostList();
+            foreach (HostData host in hosts)
+            {
+                hostList.Add(host);
+            }
+        }
+        else if(msEvent != MasterServerEvent.RegistrationSucceeded)
+        {
+            State = ConnectionState.NOT_CONNECTED;
+        }
+    }
+
+    void OnCameraTransformMessage(NetworkMessage netMsg)
+    {
+        Debug.Log(netMsg);
     }
 
     public void SetHost(int iHostId)
     {
-        if (iHostId < 0 || iHostId > hostList.Length)
+        if (iHostId < 0 || iHostId > hostList.Count)
             Debug.LogError("Invalid Host ID");
 
         selectedHost = hostList[iHostId];
+    }
+
+    public void SetNumberOfTiles(int iNumTilesWidth,int iNumTilesHeigth)
+    {
+        if (iNumTilesWidth < 0 || iNumTilesHeigth < 0)
+            Debug.LogError("Invalid Number of Tiles");
+        if (State != ConnectionState.RUNNING_AS_SERVER)
+            Debug.LogError("Must run as server to change the number of tiles");
+        if (iNumTilesWidth * iNumTilesHeigth > iMaxNumberOfConnections)
+            Debug.LogError("This exceeds the maximum number of connections");
+        Vector2 numTiles = new Vector2(iNumTilesWidth, iNumTilesHeigth);
+
+        TileComposer tileComposer = Camera.main.GetComponent<TileComposer>();
+        tileComposer.NumTilesChanged(numTiles);
     }
 }

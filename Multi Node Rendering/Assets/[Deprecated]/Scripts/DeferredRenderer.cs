@@ -61,7 +61,7 @@ public class DeferredRenderer : MonoBehaviour
     // Remove me when callback rendering system is in place
     private TestBehaviour cube;
 
-    private Camera camera;
+    //private Camera myCamera;
 
     private bool active = false;
 
@@ -138,7 +138,7 @@ public class DeferredRenderer : MonoBehaviour
     /// </summary>
     void OnEnable()
     {        
-        camera = GetComponent<Camera>();
+        //myCamera = GetComponent<Camera>();
     }
 
 

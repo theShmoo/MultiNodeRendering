@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections.Generic;
 
 /// <summary>
@@ -18,7 +19,7 @@ public class RayCastState
 /// <summary>
 /// Performs raycast rendering of the scene to the given tile
 /// </summary>
-public class TileRaycaster : MonoBehaviour
+public class TileRaycaster : NetworkBehaviour
 {
 
     // A collection to store all tiles to be rendered
@@ -29,6 +30,7 @@ public class TileRaycaster : MonoBehaviour
 
     // State object
     private RayCastState state;
+    private bool stateChanged;
 
     private Vector2 numTiles;
 
@@ -48,13 +50,14 @@ public class TileRaycaster : MonoBehaviour
     private Texture2D renderedImage;
 
     [Range(0, 2)]
+    [SyncVar]
     public float opacity = 1;
 
     [Range(0, 1)]
+    [SyncVar]
     public int pass = 0;
 
     private bool tileDimensionsChanged = true;
-    private bool stateChanged = true;
 
     [SerializeField]
     private RenderTexture compositeBuffer;
@@ -74,7 +77,11 @@ public class TileRaycaster : MonoBehaviour
             tileDimensionsChanged = true;
             Debug.Log("Dimensions Changed");
         }
-       
+
+        int width = (int)(tile.Size.x * tile.screenWidth);
+        int height = (int)(tile.Size.y * tile.screenHeight);
+        renderedImage = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
+        renderedImage.wrapMode = TextureWrapMode.Clamp;
         this.tile = tile;
     }
 
@@ -95,9 +102,9 @@ public class TileRaycaster : MonoBehaviour
     /// 
     /// </summary>
     /// <returns></returns>
-    public RenderTexture GetRenderedImage()
+    public Texture2D GetRenderedImage()
     {
-        return compositeBuffer;
+        return renderedImage;
     }
 
     
@@ -106,64 +113,70 @@ public class TileRaycaster : MonoBehaviour
     /// </summary>
     private void OnPostRender()
     {
-        //if (stateChanged)
-        //{
-        //    RenderTiles();           
-        //    stateChanged = false;
-        //}
+        if (stateChanged)
+        {
+            //RenderTile();
+            stateChanged = false;
+        }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public void RenderTile()
-    {      
-            // Size of the tile in px      
+    [ClientRpc]
+    public void RpcRenderTile()
+    {
+        if (tile == null)
+            Debug.LogError("Can't render the tile, because it is empty.");
 
-            int width = (int)(tile.Size.x * tile.screenWidth);
-            int height = (int)(tile.Size.y * tile.screenHeight);
+        // Size of the tile in px      
+        int width = (int)(tile.Size.x * tile.screenWidth);
+        int height = (int)(tile.Size.y * tile.screenHeight);
 
-            // Create new Render Textures if the size of a tile changes
-            if (tileDimensionsChanged)
-            {
-                backDepth       = CreateRenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
-                frontDepth      = CreateRenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
-                compositeBuffer = CreateRenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
+        // Create new Render Textures if the size of a tile changes
+        if (tileDimensionsChanged)
+        {
+            backDepth       = CreateRenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
+            frontDepth      = CreateRenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
+            compositeBuffer = CreateRenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat);
 
-                tileDimensionsChanged = false;
-            }
-
-            Matrix4x4 P = tile.getOffCenterProjectionMatrix();
-            Matrix4x4 V = state.viewMatrix;
-            Matrix4x4 M = state.volumeWorldMatrix;
-            // Draw front faces of bounding box to texture      
-            Graphics.SetRenderTarget(frontDepth);
-            GL.Clear(true, true, Color.black);
-
-            depthPassMaterial.SetMatrix("_MVPMatrix", P * V * M);
-            depthPassMaterial.SetPass(0);
-            Graphics.DrawMeshNow(boundingBox, state.volumeWorldMatrix, 0);
-
-            // Draw back faces of bounding box to texture
-            Graphics.SetRenderTarget(backDepth);
-            GL.Clear(true, true, Color.black);
-
-            depthPassMaterial.SetPass(1);
-            Graphics.DrawMeshNow(boundingBox, state.volumeWorldMatrix, 0);
-
-            // Perform Raycasting in a full screen pass
-            Graphics.SetRenderTarget(compositeBuffer);
-            GL.Clear(true, true, Color.black);
-            
-            rayMarchMaterial.SetFloat("_Opacity", opacity); // Blending strength 
-            rayMarchMaterial.SetTexture("_BackTex", backDepth);
-            rayMarchMaterial.SetTexture("_FrontTex", frontDepth);
-            rayMarchMaterial.SetTexture("_VolumeTex", volumeTexture);
-            rayMarchMaterial.SetVector("_TextureSize", new Vector4(volumeTexture.width, volumeTexture.height, volumeTexture.depth));
-
-            Graphics.Blit(null, compositeBuffer, rayMarchMaterial, pass);
-                           
+            tileDimensionsChanged = false;
         }
+
+        Matrix4x4 P = tile.getOffCenterProjectionMatrix();
+        Matrix4x4 V = state.viewMatrix;
+        Matrix4x4 M = state.volumeWorldMatrix;
+        // Draw front faces of bounding box to texture      
+        Graphics.SetRenderTarget(frontDepth);
+        GL.Clear(true, true, Color.black);
+
+        depthPassMaterial.SetMatrix("_MVPMatrix", P * V * M);
+        depthPassMaterial.SetPass(0);
+        Graphics.DrawMeshNow(boundingBox, state.volumeWorldMatrix, 0);
+
+        // Draw back faces of bounding box to texture
+        Graphics.SetRenderTarget(backDepth);
+        GL.Clear(true, true, Color.black);
+
+        depthPassMaterial.SetPass(1);
+        Graphics.DrawMeshNow(boundingBox, state.volumeWorldMatrix, 0);
+
+        // Perform Raycasting in a full screen pass
+        Graphics.SetRenderTarget(compositeBuffer);
+        GL.Clear(true, true, Color.black);
+            
+        rayMarchMaterial.SetFloat("_Opacity", opacity); // Blending strength 
+        rayMarchMaterial.SetTexture("_BackTex", backDepth);
+        rayMarchMaterial.SetTexture("_FrontTex", frontDepth);
+        rayMarchMaterial.SetTexture("_VolumeTex", volumeTexture);
+        rayMarchMaterial.SetVector("_TextureSize", new Vector4(volumeTexture.width, volumeTexture.height, volumeTexture.depth));
+
+        Graphics.Blit(null, compositeBuffer, rayMarchMaterial, pass);
+
+        renderedImage.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
+        renderedImage.Apply();
+                   
+    }
 
     void Update()
     {

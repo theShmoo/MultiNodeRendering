@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 [ExecuteInEditMode]
-public class NavigateCamera : MonoBehaviour
+public class NavigateCamera : NetworkBehaviour
 {
     public float DefaultDistance = 5.0f;
 
@@ -53,6 +54,9 @@ public class NavigateCamera : MonoBehaviour
 
     void Update()
     {
+        if (!isLocalPlayer)
+            return;
+
         deltaTime = Time.realtimeSinceStartup - lastUpdateTime;
         lastUpdateTime = Time.realtimeSinceStartup;
         
