@@ -25,9 +25,6 @@ public class TileRaycaster : NetworkBehaviour
     // A collection to store all tiles to be rendered
     private ScreenTile tile;
 
-    // A collection to store all rendered images
-    private Texture2D tileImage;
-
     // State object
     private RayCastState state;
     private bool stateChanged;
@@ -49,11 +46,10 @@ public class TileRaycaster : NetworkBehaviour
     [SerializeField]
     private Texture2D renderedImage;
 
+    [SyncVar]
     private float opacity = 1;
-
+    [SyncVar]
     private int pass = 0;
-
-    private Vector2 renderTileIndex = new Vector2 (-1,-1);
 
     public int Pass
     {
@@ -71,6 +67,8 @@ public class TileRaycaster : NetworkBehaviour
             this.opacity = value;
         }
     }
+
+    public Vector2 TileIndex = new Vector2(-1, -1);
 
     private bool tileDimensionsChanged = true;
 
@@ -100,17 +98,6 @@ public class TileRaycaster : NetworkBehaviour
         renderedImage.wrapMode = TextureWrapMode.Clamp;
         this.tile = tile;
     }
-
-    /// <summary>
-    /// Set the tile index this client should render. 
-    /// </summary>
-    /// <param name="tileIndex">a Vector2 defining the tile index</param>
-    [ClientRpc]
-    public void RpcSetRenderedTileIndex(Vector2 tileIndex)
-    {
-        this.renderTileIndex = tileIndex;
-    }
-
 
     /// <summary>
     /// 
@@ -147,46 +134,46 @@ public class TileRaycaster : NetworkBehaviour
         }
     }
 
-    private void OnRenderImage(RenderTexture src, RenderTexture dest)
-    {
-        if (isServer || tile == null || renderTileIndex != tile.tileIndex)
-        {
-            return;
-        }
-
-        Graphics.SetRenderTarget(dest);
-        GL.Clear(true, true, Color.black);
-
-        texturedQuadMaterial.SetTexture("_MainTex", renderedImage);
-        texturedQuadMaterial.SetPass(0);
-
-        // Scale viewport rect to the tile position
-        float sl = 1.0f - (2.0f * tile.tileIndex.x / tile.numTiles.x);
-        float sr = -(sl - 2.0f / tile.numTiles.x);
-        float sb = 1.0f - (2.0f * tile.tileIndex.y / tile.numTiles.y);
-        float st = -(sb - 2.0f / tile.numTiles.y);
-
-        float left = -1 * sl;
-        float right = 1 * sr;
-        float bottom = -1 * sb;
-        float top = 1 * st;
-
-        GL.Begin(GL.QUADS);
-        {
-            GL.TexCoord2(0.0f, 0.0f);
-            GL.Vertex3(left, bottom, 0.0f);
-
-            GL.TexCoord2(1.0f, 0.0f);
-            GL.Vertex3(right, bottom, 0.0f);
-
-            GL.TexCoord2(1.0f, 1.0f);
-            GL.Vertex3(right, top, 0.0f);
-
-            GL.TexCoord2(0.0f, 1.0f);
-            GL.Vertex3(left, top, 0.0f);
-        }
-        GL.End();
-    }
+//     private void OnRenderImage(RenderTexture src, RenderTexture dest)
+//     {
+//         if (isServer || tile == null || TileIndex != tile.tileIndex)
+//         {
+//             return;
+//         }
+// 
+//         Graphics.SetRenderTarget(dest);
+//         GL.Clear(true, true, Color.black);
+// 
+//         texturedQuadMaterial.SetTexture("_MainTex", renderedImage);
+//         texturedQuadMaterial.SetPass(0);
+// 
+//         // Scale viewport rect to the tile position
+//         float sl = 1.0f - (2.0f * tile.tileIndex.x / tile.numTiles.x);
+//         float sr = -(sl - 2.0f / tile.numTiles.x);
+//         float sb = 1.0f - (2.0f * tile.tileIndex.y / tile.numTiles.y);
+//         float st = -(sb - 2.0f / tile.numTiles.y);
+// 
+//         float left = -1 * sl;
+//         float right = 1 * sr;
+//         float bottom = -1 * sb;
+//         float top = 1 * st;
+// 
+//         GL.Begin(GL.QUADS);
+//         {
+//             GL.TexCoord2(0.0f, 0.0f);
+//             GL.Vertex3(left, bottom, 0.0f);
+// 
+//             GL.TexCoord2(1.0f, 0.0f);
+//             GL.Vertex3(right, bottom, 0.0f);
+// 
+//             GL.TexCoord2(1.0f, 1.0f);
+//             GL.Vertex3(right, top, 0.0f);
+// 
+//             GL.TexCoord2(0.0f, 1.0f);
+//             GL.Vertex3(left, top, 0.0f);
+//         }
+//         GL.End();
+//     }
 
     /// <summary>
     /// 
@@ -194,7 +181,7 @@ public class TileRaycaster : NetworkBehaviour
     [ClientRpc]
     public void RpcRenderTile()
     {
-        if (isServer || tile == null || renderTileIndex != tile.tileIndex)
+        if (isServer || tile == null || TileIndex != tile.tileIndex)
         {
             return;
         }
@@ -245,7 +232,21 @@ public class TileRaycaster : NetworkBehaviour
 
         renderedImage.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
         renderedImage.Apply();
-                   
+        SendTextureUpdate();
+    }
+
+    void SendTextureUpdate()
+    {
+        byte[] textureData = renderedImage.EncodeToPNG();
+        int numBytes = textureData.Length;
+        int index = System.Convert.ToInt32(tile.numTiles.x * TileIndex.x + TileIndex.y);
+
+        // send the texture as parts to the server
+        // todo
+        // send the end package
+        // todo
+
+        this.gameObject.GetComponent<TileComposer>().CmdUpdate(index, textureData);
     }
 
     void Update()

@@ -7,9 +7,37 @@ using UnityEngine.Networking.NetworkSystem;
 
 public class TileNetworkManager : NetworkManager {
 
+    /// <summary>
+    // Singleton instance
+    /// </summary>
+    private static TileNetworkManager instance;
+
     public int nNumClients = 0;
     public TileComposer tileComposer = null;
-    private int hostConnectionId = -1;
+    public NetworkConnection hostConnection = null;
+
+    /// <summary>
+    /// Returns the instance of this NetworkManager
+    /// </summary>
+    public static TileNetworkManager Instance
+    {
+        get { return instance; }
+    }
+
+    /// <summary>
+    /// This Function is called once the script awakes, even before Enable() and Start()
+    /// </summary>
+    private void Awake()
+    {
+        // Destroy other Instances of this script
+        if (instance && instance != this)
+        {
+            Destroy(this.gameObject);
+        }
+
+        instance = this;
+        DontDestroyOnLoad(this.gameObject);
+    }
 
     // Use this for initialization
     void Start()
@@ -53,7 +81,7 @@ public class TileNetworkManager : NetworkManager {
             if (nNumClients > 0)
                 Debug.LogError("The first client that connects should be the composer!");
             tileComposer = player.GetComponent<TileComposer>();
-            hostConnectionId = conn.connectionId;
+            hostConnection = conn;
         }
         else
         {
@@ -81,7 +109,7 @@ public class TileNetworkManager : NetworkManager {
             int iClientsY = nNumClients / iClientsX;
             Vector2 vTiles = new Vector2(iClientsX, iClientsY);
             tileComposer.NumTilesChanged(vTiles);
-            tileComposer.ArrangeTilesToRaycaster(hostConnectionId);
+            tileComposer.ArrangeTilesToRaycaster(hostConnection.connectionId);
             tileComposer.Active = true;
         }
         else

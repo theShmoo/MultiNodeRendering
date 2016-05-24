@@ -107,20 +107,21 @@ public class TileComposer : NetworkBehaviour
         {
             raycaster[i].RpcSetSceneState(state);
             raycaster[i].RpcRenderTile();
-            renderedImages[i] = raycaster[i].GetRenderedImage();
         }        
 	}
 
+    [Command]
+    public void CmdUpdate(int iTileIndex, byte[] data)
+    {
+        var tex = TileNetworkManager.Instance.tileComposer.renderedImages[iTileIndex];
+        tex.LoadImage(data);
+        tex.Apply();
+    }
+
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        if (!isLocalPlayer || !active) // todo change
+        if (isLocalPlayer && active)
         {
-            // the client does nothing
-            return;
-        }
-        else
-        {
-
             Graphics.SetRenderTarget(dest);
             GL.Clear(true, true, Color.black);
 
@@ -180,9 +181,12 @@ public class TileComposer : NetworkBehaviour
         // Dispose old textures
         renderedImages.Clear();
 
-        
-        int width  = (int)(Screen.width / numTiles.x);
-        int height = (int)(Screen.height / numTiles.y);
+
+        int screenWidth = Screen.width;
+        int screenHeight = Screen.height;
+
+        int width = (int)(screenWidth / numTiles.x);
+        int height = (int)(screenHeight / numTiles.y);
         
         // Create new tile objects
         for (int i = 0; i < numTiles.x; i++)
@@ -199,10 +203,8 @@ public class TileComposer : NetworkBehaviour
                 tile.fp = Camera.main.farClipPlane;
                 tile.aspect = Camera.main.aspect;
 
-                tile.screenWidth = Screen.width;
-                tile.screenHeight = Screen.height;
-                
-
+                tile.screenWidth = screenWidth;
+                tile.screenHeight = screenHeight;
                 
                 tiles.Add(tile);
                 Texture2D tex = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
@@ -225,7 +227,13 @@ public class TileComposer : NetworkBehaviour
             foreach (var player in conn.playerControllers)
             {
                 var r = player.gameObject.GetComponent<TileRaycaster>();
-                r.RpcSetRenderedTileIndex(tiles[i].tileIndex);
+               
+                // send the tile index to the client
+                var msg = new TileIndexMessage();
+                msg.tileIndex = tiles[i].tileIndex;
+                msg.netId = r.netId;
+                conn.Send(TileIndexMessage.MSG_ID, msg);
+
                 r.RpcSetTile(tiles[i]);
                 this.raycaster.Add(r);
                 i++;
@@ -236,6 +244,31 @@ public class TileComposer : NetworkBehaviour
                 break;
         }
         
+    }
+
+    // called on the client when he started
+    public override void OnStartClient()
+    {
+        NetworkManager.singleton.client.RegisterHandler(TileIndexMessage.MSG_ID, OnTileIndexMsg);
+        NetworkManager.singleton.client.RegisterHandler(PartTextureMessage.MSG_ID, OnTexturePartMsg);
+        NetworkManager.singleton.client.RegisterHandler(TileTextureEndMessage.MSG_ID, OnTextureMsg);
+    }
+
+    static void OnTileIndexMsg(NetworkMessage netMsg)
+    {
+        var msg = netMsg.ReadMessage<TileIndexMessage>();
+        var player = ClientScene.FindLocalObject(msg.netId);
+        player.GetComponent<TileRaycaster>().TileIndex = msg.tileIndex;
+    }
+
+    public static void OnTexturePartMsg(NetworkMessage netMsg)
+    {
+        // todo
+    }
+
+    public static void OnTextureMsg(NetworkMessage netMsg)
+    {
+        // todo
     }
 
 }
