@@ -11,8 +11,6 @@ public class ScreenTile
     public float fp;
     public float aspect;
 
-    public Texture2D renderedImage;
-
     /// <summary>
     /// The number of tiles
     /// </summary>

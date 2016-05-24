@@ -1,6 +1,26 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
+
 using System.Collections.Generic;
+
+#if UNITY_EDITOR
+using UnityEditor;
+[CustomEditor(typeof(TileComposer))]
+public class CustomInspector : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        base.OnInspectorGUI();
+
+        if (target.GetType() == typeof(TileComposer))
+        {
+            TileComposer getterSetter = (TileComposer)target;
+            getterSetter.Pass = getterSetter.pass;
+            getterSetter.Opacity = getterSetter.opacity;
+        }
+    }
+}
+#endif
 
 public class TileComposer : NetworkBehaviour
 {
@@ -15,16 +35,57 @@ public class TileComposer : NetworkBehaviour
 
     private bool active = false;
 
+    [SerializeField]
+    [SyncVar]
+    [Range(0, 2)]
+    public float opacity = 1;
+
+    [SerializeField]
+    [SyncVar]
+    [Range(0, 1)]
+    public int pass = 0;
+
     public bool Active
     {
         get { return active; }
         set { active = value; }
     }
 
+    public int Pass
+    {
+        get { return pass; }
+        set {
+            this.pass = value;
+            OnRaycasterParameterChanged();
+        }
+    }
+    public float Opacity
+    {
+        get { return opacity; }
+        set
+        {
+            this.opacity = value;
+            OnRaycasterParameterChanged();
+        }
+    }
+
+    void OnRaycasterParameterChanged()
+    {
+        if (raycaster != null)
+        {
+            foreach (var r in raycaster)
+            {
+                r.Opacity = this.opacity;
+                r.Pass = this.pass;
+            }
+        }
+    }
+
     // Use this for initialization
 	void Start () {
         tiles = new List<ScreenTile>();
         renderedImages = new List<Texture2D>();
+        raycaster = new List<TileRaycaster>();
         NumTilesChanged(numTiles);
 	}
 	
@@ -41,35 +102,13 @@ public class TileComposer : NetworkBehaviour
         state.volumeWorldMatrix = Matrix4x4.identity;
         state.viewMatrix = Camera.main.worldToCameraMatrix;
         state.projectionMatrix = Camera.main.projectionMatrix;
-        int width = (int)(Screen.width / numTiles.x);
-        int height = (int)(Screen.height / numTiles.y);
 
         for (int i = 0; i < tiles.Count; i++)
         {
-            raycaster[i].SetSceneState(state);
+            raycaster[i].RpcSetSceneState(state);
             raycaster[i].RpcRenderTile();
             renderedImages[i] = raycaster[i].GetRenderedImage();
-        }
-
-        // Render each tile
-//         for (int i = 0; i < tiles.Count; i++)
-//         {
-//             ScreenTile tile = tiles[i];
-// 
-//             rayCaster.SetTile(tile);
-//             rayCaster.RenderTile();
-// 
-//             int width = (int)(Screen.width / numTiles.x);
-//             int height = (int)(Screen.height / numTiles.y);
-// 
-//             // Store content in Texture2D
-//             Graphics.SetRenderTarget(rayCaster.GetRenderedImage());
-// 
-//             Texture2D img = renderedImages[i];
-//             img.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
-//             img.Apply();
-//         }
-        
+        }        
 	}
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -107,8 +146,6 @@ public class TileComposer : NetworkBehaviour
                 float bottom = -1 * sb;
                 float top = 1 * st;
 
-
-
                 GL.Begin(GL.QUADS);
                 {
                     GL.TexCoord2(0.0f, 0.0f);
@@ -124,10 +161,7 @@ public class TileComposer : NetworkBehaviour
                     GL.Vertex3(left, top, 0.0f);
                 }
                 GL.End();
-                //break;
             }
-
-            // Graphics.Blit(src, dest);
         }
     }
 
@@ -178,17 +212,30 @@ public class TileComposer : NetworkBehaviour
         }
     }
 
-    public void ArrangeTilesToRaycaster(List<TileRaycaster> raycaster)
+    public void ArrangeTilesToRaycaster(int hostConnectionId)
     {
         int i = 0;
-        foreach(var r in raycaster)
+        this.raycaster.Clear();
+        foreach (var conn in NetworkServer.connections)
         {
-            r.SetTile(tiles[i]);
-            i++;
+            // can be null for disconnected clients or the host
+            if (conn == null || conn.connectionId == hostConnectionId)
+                continue;
+
+            foreach (var player in conn.playerControllers)
+            {
+                var r = player.gameObject.GetComponent<TileRaycaster>();
+                r.RpcSetRenderedTileIndex(tiles[i].tileIndex);
+                r.RpcSetTile(tiles[i]);
+                this.raycaster.Add(r);
+                i++;
+                if (i >= tiles.Count)
+                    break;
+            }
             if (i >= tiles.Count)
                 break;
         }
-        this.raycaster = raycaster;
+        
     }
 
 }

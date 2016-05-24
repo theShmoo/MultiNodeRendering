@@ -7,8 +7,9 @@ using UnityEngine.Networking.NetworkSystem;
 
 public class TileNetworkManager : NetworkManager {
 
-    public List<GameObject> clients = null;
+    public int nNumClients = 0;
     public TileComposer tileComposer = null;
+    private int hostConnectionId = -1;
 
     // Use this for initialization
     void Start()
@@ -18,7 +19,7 @@ public class TileNetworkManager : NetworkManager {
 
     void ServerInit()
     {
-        clients = new List<GameObject>();
+        nNumClients = 0;
     }
 
     // called when a client disconnects
@@ -49,13 +50,14 @@ public class TileNetworkManager : NetworkManager {
         // the first client that connects becomes the composer.
         if (tileComposer == null)
         {
-            if (clients.Count != 0)
+            if (nNumClients > 0)
                 Debug.LogError("The first client that connects should be the composer!");
             tileComposer = player.GetComponent<TileComposer>();
+            hostConnectionId = conn.connectionId;
         }
         else
         {
-            clients.Add(player.gameObject);
+            nNumClients++;
         }
         ItlSetTileComposerByClients();
     }
@@ -64,7 +66,7 @@ public class TileNetworkManager : NetworkManager {
     public override void OnServerRemovePlayer(NetworkConnection conn, PlayerController player)
     {
         Debug.Log("a player " + player.playerControllerId + " is removed for a client");
-        clients.Remove(player.gameObject);
+        nNumClients--;
         ItlSetTileComposerByClients();
         if (player.gameObject != null)
             NetworkServer.Destroy(player.gameObject);
@@ -72,21 +74,14 @@ public class TileNetworkManager : NetworkManager {
 
     private void ItlSetTileComposerByClients()
     {
-        if (clients.Count > 0)
+        if (nNumClients > 0)
         {
-            double dNumClients = System.Convert.ToDouble(clients.Count);
-            int iClientsX = System.Convert.ToInt32(Math.Log(dNumClients) / Math.Log(2.0));
+            int iClientsX = System.Convert.ToInt32(Math.Log(nNumClients) / Math.Log(2.0));
             iClientsX = Math.Max(iClientsX, 1);
-            int iClientsY = clients.Count / iClientsX;
-            //int iOverflow = clients.Count - (iClientsX * iClientsY);
+            int iClientsY = nNumClients / iClientsX;
             Vector2 vTiles = new Vector2(iClientsX, iClientsY);
             tileComposer.NumTilesChanged(vTiles);
-            List<TileRaycaster> raycaster = new List<TileRaycaster>();
-            foreach (var c in clients)
-            {
-                raycaster.Add(c.GetComponent<TileRaycaster>());
-            }
-            tileComposer.ArrangeTilesToRaycaster(raycaster);
+            tileComposer.ArrangeTilesToRaycaster(hostConnectionId);
             tileComposer.Active = true;
         }
         else

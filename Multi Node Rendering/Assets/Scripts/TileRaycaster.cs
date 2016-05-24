@@ -43,19 +43,34 @@ public class TileRaycaster : NetworkBehaviour
     private Material depthPassMaterial;
     [SerializeField]
     private Material rayMarchMaterial;
-
-   
+    
+    public Material texturedQuadMaterial;
 
     [SerializeField]
     private Texture2D renderedImage;
 
-    [Range(0, 2)]
-    [SyncVar]
-    public float opacity = 1;
+    private float opacity = 1;
 
-    [Range(0, 1)]
-    [SyncVar]
-    public int pass = 0;
+    private int pass = 0;
+
+    private Vector2 renderTileIndex = new Vector2 (-1,-1);
+
+    public int Pass
+    {
+        get { return pass; }
+        set
+        {
+            this.pass = value;
+        }
+    }
+    public float Opacity
+    {
+        get { return opacity; }
+        set
+        {
+            this.opacity = value;
+        }
+    }
 
     private bool tileDimensionsChanged = true;
 
@@ -70,7 +85,8 @@ public class TileRaycaster : NetworkBehaviour
     /// 
     /// </summary>
     /// <param name="tile"></param>
-    public void SetTile(ScreenTile tile)
+    [ClientRpc]
+    public void RpcSetTile(ScreenTile tile)
     {
         if(this.tile == null || this.tile.numTiles.x != tile.numTiles.x || this.tile.numTiles.y != tile.numTiles.y)
         {
@@ -85,12 +101,23 @@ public class TileRaycaster : NetworkBehaviour
         this.tile = tile;
     }
 
+    /// <summary>
+    /// Set the tile index this client should render. 
+    /// </summary>
+    /// <param name="tileIndex">a Vector2 defining the tile index</param>
+    [ClientRpc]
+    public void RpcSetRenderedTileIndex(Vector2 tileIndex)
+    {
+        this.renderTileIndex = tileIndex;
+    }
+
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="state"></param>
-    public void SetSceneState(RayCastState state)
+    [ClientRpc]
+    public void RpcSetSceneState(RayCastState state)
     {
         // Set new state
         this.state = state;
@@ -120,14 +147,57 @@ public class TileRaycaster : NetworkBehaviour
         }
     }
 
+    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        if (isServer || tile == null || renderTileIndex != tile.tileIndex)
+        {
+            return;
+        }
+
+        Graphics.SetRenderTarget(dest);
+        GL.Clear(true, true, Color.black);
+
+        texturedQuadMaterial.SetTexture("_MainTex", renderedImage);
+        texturedQuadMaterial.SetPass(0);
+
+        // Scale viewport rect to the tile position
+        float sl = 1.0f - (2.0f * tile.tileIndex.x / tile.numTiles.x);
+        float sr = -(sl - 2.0f / tile.numTiles.x);
+        float sb = 1.0f - (2.0f * tile.tileIndex.y / tile.numTiles.y);
+        float st = -(sb - 2.0f / tile.numTiles.y);
+
+        float left = -1 * sl;
+        float right = 1 * sr;
+        float bottom = -1 * sb;
+        float top = 1 * st;
+
+        GL.Begin(GL.QUADS);
+        {
+            GL.TexCoord2(0.0f, 0.0f);
+            GL.Vertex3(left, bottom, 0.0f);
+
+            GL.TexCoord2(1.0f, 0.0f);
+            GL.Vertex3(right, bottom, 0.0f);
+
+            GL.TexCoord2(1.0f, 1.0f);
+            GL.Vertex3(right, top, 0.0f);
+
+            GL.TexCoord2(0.0f, 1.0f);
+            GL.Vertex3(left, top, 0.0f);
+        }
+        GL.End();
+    }
+
     /// <summary>
     /// 
     /// </summary>
     [ClientRpc]
     public void RpcRenderTile()
     {
-        if (tile == null)
-            Debug.LogError("Can't render the tile, because it is empty.");
+        if (isServer || tile == null || renderTileIndex != tile.tileIndex)
+        {
+            return;
+        }
 
         // Size of the tile in px      
         int width = (int)(tile.Size.x * tile.screenWidth);
