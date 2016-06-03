@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
+
 using UnityEngine.Networking;
 using UnityEngine.Networking.NetworkSystem;
 
@@ -11,10 +13,12 @@ public class TileNetworkManager : NetworkManager {
     // Singleton instance
     /// </summary>
     private static TileNetworkManager instance;
-
+    
+    // listener on textures
     public int nNumClients = 0;
     public TileComposer tileComposer = null;
     public NetworkConnection hostConnection = null;
+    //public TextureTCPReceiver textureReceiver = null;
 
     /// <summary>
     /// Returns the instance of this NetworkManager
@@ -47,7 +51,10 @@ public class TileNetworkManager : NetworkManager {
 
     void ServerInit()
     {
+//        NetworkServer.SetNetworkConnectionClass<DebugConnection>();
         nNumClients = 0;
+//         if (textureReceiver == null)
+//             textureReceiver = this.GetComponent<TextureTCPReceiver>();
     }
 
     // called when a client disconnects

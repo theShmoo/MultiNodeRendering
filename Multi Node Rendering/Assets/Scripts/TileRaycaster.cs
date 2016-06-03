@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking;
+using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
@@ -28,9 +29,7 @@ public class TileRaycaster : NetworkBehaviour
     // State object
     private RayCastState state;
     private bool stateChanged;
-
     private Vector2 numTiles;
-
 
     [SerializeField]
     private Texture3D volumeTexture;
@@ -134,47 +133,6 @@ public class TileRaycaster : NetworkBehaviour
         }
     }
 
-//     private void OnRenderImage(RenderTexture src, RenderTexture dest)
-//     {
-//         if (isServer || tile == null || TileIndex != tile.tileIndex)
-//         {
-//             return;
-//         }
-// 
-//         Graphics.SetRenderTarget(dest);
-//         GL.Clear(true, true, Color.black);
-// 
-//         texturedQuadMaterial.SetTexture("_MainTex", renderedImage);
-//         texturedQuadMaterial.SetPass(0);
-// 
-//         // Scale viewport rect to the tile position
-//         float sl = 1.0f - (2.0f * tile.tileIndex.x / tile.numTiles.x);
-//         float sr = -(sl - 2.0f / tile.numTiles.x);
-//         float sb = 1.0f - (2.0f * tile.tileIndex.y / tile.numTiles.y);
-//         float st = -(sb - 2.0f / tile.numTiles.y);
-// 
-//         float left = -1 * sl;
-//         float right = 1 * sr;
-//         float bottom = -1 * sb;
-//         float top = 1 * st;
-// 
-//         GL.Begin(GL.QUADS);
-//         {
-//             GL.TexCoord2(0.0f, 0.0f);
-//             GL.Vertex3(left, bottom, 0.0f);
-// 
-//             GL.TexCoord2(1.0f, 0.0f);
-//             GL.Vertex3(right, bottom, 0.0f);
-// 
-//             GL.TexCoord2(1.0f, 1.0f);
-//             GL.Vertex3(right, top, 0.0f);
-// 
-//             GL.TexCoord2(0.0f, 1.0f);
-//             GL.Vertex3(left, top, 0.0f);
-//         }
-//         GL.End();
-//     }
-
     /// <summary>
     /// 
     /// </summary>
@@ -232,26 +190,32 @@ public class TileRaycaster : NetworkBehaviour
 
         renderedImage.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
         renderedImage.Apply();
-        SendTextureUpdate();
+        byte[] textureData = renderedImage.EncodeToPNG();
+        int index = System.Convert.ToInt32(tile.numTiles.x * TileIndex.x + TileIndex.y);
+        TileNetworkManager.Instance.tileComposer.sendTextureToServer(index, textureData);
     }
 
     void SendTextureUpdate()
     {
         byte[] textureData = renderedImage.EncodeToPNG();
-        int numBytes = textureData.Length;
-        int index = System.Convert.ToInt32(tile.numTiles.x * TileIndex.x + TileIndex.y);
+        //int numBytes = textureData.Length;
 
         // send the texture as parts to the server
         // todo
         // send the end package
         // todo
 
-        this.gameObject.GetComponent<TileComposer>().CmdUpdate(index, textureData);
+        //this.gameObject.GetComponent<TileComposer>().(index, textureData);
     }
 
     void Update()
     {
         //RenderTile();
+    }
+
+    // called on the client when he started
+    public override void OnStartClient()
+    {
     }
 
     /// <summary>

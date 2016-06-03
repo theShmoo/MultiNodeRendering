@@ -34,7 +34,6 @@ public class TileComposer : NetworkBehaviour
     public Material texturedQuadMaterial;
 
     private bool active = false;
-
     [SerializeField]
     [SyncVar]
     [Range(0, 2)]
@@ -44,6 +43,33 @@ public class TileComposer : NetworkBehaviour
     [SyncVar]
     [Range(0, 1)]
     public int pass = 0;
+
+    /// <summary>
+    /// the id of the connection between the sender and the socket
+    /// </summary>
+    int connectionId;
+    /// <summary>
+    /// This is the channel id of the tcp channel
+    /// </summary>
+    [SyncVar]
+    public int myReliableChannelId;
+    /// <summary>
+    /// This is the id of the socket that receives the textures
+    /// </summary>
+    [SyncVar]
+    public int socketId;
+    /// <summary>
+    /// This is the port of the socket
+    /// </summary>
+    [SyncVar]
+    public int socketPort;
+    /// <summary>
+    /// The ip adress of the host
+    /// </summary>
+    [SyncVar]
+    public string address;
+
+    public int clientSocketId;
 
     public bool Active
     {
@@ -87,13 +113,29 @@ public class TileComposer : NetworkBehaviour
         renderedImages = new List<Texture2D>();
         raycaster = new List<TileRaycaster>();
         NumTilesChanged(numTiles);
+
+        if (isLocalPlayer)
+        {
+            if (isServer)
+            {
+//                 NetworkTransport.Init();
+//                 ConnectionConfig config = new ConnectionConfig();
+//                 myReliableChannelId = config.AddChannel(QosType.ReliableFragmented);
+//                 int maxConnections = 10;
+//                 HostTopology topology = new HostTopology(config, maxConnections);
+//                 socketPort = 8888;
+//                 address = "localhost";
+//                 socketId = NetworkTransport.AddHost(topology, socketPort);
+//                 Debug.Log("Socket Open. SocketId is: " + socketId);
+
+            }
+        }
 	}
 	
 	// Update is called once per frame
 	void Update () {
-        if (!isLocalPlayer || raycaster == null || !active)
+        if (!isLocalPlayer || raycaster == null || raycaster.Count < 1 || !active)
         {
-            // the server does nothing
             return;
         }
         
@@ -107,15 +149,64 @@ public class TileComposer : NetworkBehaviour
         {
             raycaster[i].RpcSetSceneState(state);
             raycaster[i].RpcRenderTile();
-        }        
-	}
+        }
 
-    [Command]
-    public void CmdUpdate(int iTileIndex, byte[] data)
+        int recHostId;
+        int recConnectionId;
+        int recChannelId;
+        byte[] recBuffer = new byte[1024];
+        int bufferSize = 1024;
+        int dataSize;
+        byte error;
+        NetworkEventType recNetworkEvent = NetworkTransport.Receive(out recHostId, out recConnectionId, out recChannelId, recBuffer, bufferSize, out dataSize, out error);
+        LogNetworkError(error);
+
+        switch (recNetworkEvent)
+        {
+            case NetworkEventType.Nothing:
+                break;
+            case NetworkEventType.ConnectEvent:
+                Debug.Log("incoming connection event received");
+                break;
+            case NetworkEventType.DataEvent:
+                Debug.Log("incoming message event received with " + bufferSize + " bytes");
+                break;
+            case NetworkEventType.DisconnectEvent:
+                Debug.Log("remote client event disconnected");
+                break;
+        }
+	}
+    /// <summary>
+    /// Log any network errors to the console.
+    /// </summary>
+    /// <param name="error">Error.</param>
+    void LogNetworkError(byte error)
+    {
+        if (error != (byte)NetworkError.Ok)
+        {
+            NetworkError nerror = (NetworkError)error;
+            Debug.Log("Error: " + nerror.ToString());
+        }
+    }
+
+    public void SetTexture(int iTileIndex, byte[] data)
     {
         var tex = TileNetworkManager.Instance.tileComposer.renderedImages[iTileIndex];
         tex.LoadImage(data);
         tex.Apply();
+    }
+
+    public void sendTextureToServer(int iTileIndex, byte[] textureData)
+    {
+        byte error;
+        int port;
+        ulong network;
+        ushort dstNode;
+        NetworkTransport.GetConnectionInfo(socketId, connectionId, out port, out network, out dstNode, out error);
+        //LogNetworkError(error);
+        //Debug.Log(port + " " + network + " " + dstNode);
+        NetworkTransport.Send(socketId, connectionId, myReliableChannelId, textureData, textureData.Length, out error);
+        //LogNetworkError(error);
     }
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -182,8 +273,8 @@ public class TileComposer : NetworkBehaviour
         renderedImages.Clear();
 
 
-        int screenWidth = Screen.width;
-        int screenHeight = Screen.height;
+        int screenWidth = 64;
+        int screenHeight = 32;
 
         int width = (int)(screenWidth / numTiles.x);
         int height = (int)(screenHeight / numTiles.y);
@@ -249,9 +340,38 @@ public class TileComposer : NetworkBehaviour
     // called on the client when he started
     public override void OnStartClient()
     {
-        NetworkManager.singleton.client.RegisterHandler(TileIndexMessage.MSG_ID, OnTileIndexMsg);
-        NetworkManager.singleton.client.RegisterHandler(PartTextureMessage.MSG_ID, OnTexturePartMsg);
-        NetworkManager.singleton.client.RegisterHandler(TileTextureEndMessage.MSG_ID, OnTextureMsg);
+        if (!isServer)
+        {
+            NetworkManager.singleton.client.RegisterHandler(TileIndexMessage.MSG_ID, OnTileIndexMsg);
+            //NetworkManager.singleton.client.RegisterHandler(PartTextureMessage.MSG_ID, OnTexturePartMsg);
+            //NetworkManager.singleton.client.RegisterHandler(TileTextureEndMessage.MSG_ID, OnTextureMsg);
+            if (TileNetworkManager.Instance.tileComposer == null)
+            {
+                var composer = GetComponent<TileComposer>();
+
+                NetworkTransport.Init();
+                ConnectionConfig config = new ConnectionConfig();
+                myReliableChannelId = config.AddChannel(QosType.ReliableFragmented);
+                int maxConnections = 10;
+                HostTopology topology = new HostTopology(config, maxConnections);
+                socketPort = 8888;
+                address = "127.0.0.1";
+                int serverSocket = NetworkTransport.AddHost(topology, socketPort);
+                Debug.Log("Server Open. SocketId is: " + serverSocket);
+                clientSocketId = NetworkTransport.AddHost(topology);
+                Debug.Log("Client Open. SocketId is: " + clientSocketId);
+
+                byte connectionError;
+                composer.connectionId = NetworkTransport.Connect(clientSocketId, composer.address, composer.socketPort, 0, out connectionError);
+
+                composer.socketId = clientSocketId;
+                LogNetworkError(connectionError);
+
+                Debug.Log("Connected to server. ConnectionId: " + composer.connectionId);
+
+                TileNetworkManager.Instance.tileComposer = composer;
+            }
+        }
     }
 
     static void OnTileIndexMsg(NetworkMessage netMsg)
