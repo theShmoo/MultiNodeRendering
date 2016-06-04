@@ -1,16 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.Networking;
 
 /// <summary>
 /// A screen tile represents a part of the screen of the MAIN camera. 
 /// </summary>
-public class ScreenTile 
+public class ScreenTile
 {
     public float fov;
     public float np;
     public float fp;
     public float aspect;
-
     /// <summary>
     /// The number of tiles
     /// </summary>
@@ -40,6 +40,33 @@ public class ScreenTile
         get {
             return new Vector2(1.0f / numTiles.x, 1.0f / numTiles.y);
         }
+    }
+
+    public TileMessage GetTileMessage()
+    {
+        TileMessage msg = new TileMessage();
+        msg.fov = this.fov;
+        msg.np = this.np;
+        msg.fp = this.fp;
+        msg.aspect = this.aspect;
+        msg.numTiles = this.numTiles;
+        msg.tileIndex = this.tileIndex;
+        msg.screenWidth = this.screenWidth;
+        msg.screenHeight = this.screenHeight;
+
+        return msg;
+    }
+
+    public void setFromTileMessage(TileMessage msg)
+    {
+        this.fov = msg.fov;
+        this.np = msg.np;
+        this.fp = msg.fp;
+        this.aspect = msg.aspect;
+        this.numTiles = msg.numTiles;
+        this.tileIndex = msg.tileIndex;
+        this.screenWidth = msg.screenWidth;
+        this.screenHeight = msg.screenHeight;
     }
 
 	/// <summary>

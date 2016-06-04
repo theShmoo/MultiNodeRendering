@@ -1,34 +1,19 @@
 ﻿using UnityEngine;
-using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// This class represents a state structure for the scene/animation for distributed rendering systems to transmit all neccessary parameters to the render node
+/// Performs ray cast rendering of the scene to the given tile
 /// </summary>
-public class RayCastState
-{
-    public long deltaTime;
-
-    public Matrix4x4 viewMatrix;
-
-    public Matrix4x4 projectionMatrix;
-
-    public Matrix4x4 volumeWorldMatrix;
-}
-
-/// <summary>
-/// Performs raycast rendering of the scene to the given tile
-/// </summary>
-public class TileRaycaster : NetworkBehaviour
+public class TileRaycaster : MonoBehaviour
 {
 
     // A collection to store all tiles to be rendered
     private ScreenTile tile;
 
     // State object
-    private RayCastState state;
-    private bool stateChanged;
+    private RayCastStateMessage state;
+    private bool stateChanged = false;
     private Vector2 numTiles;
 
     [SerializeField]
@@ -45,9 +30,7 @@ public class TileRaycaster : NetworkBehaviour
     [SerializeField]
     private Texture2D renderedImage;
 
-    [SyncVar]
     private float opacity = 1;
-    [SyncVar]
     private int pass = 0;
 
     public int Pass
@@ -67,8 +50,6 @@ public class TileRaycaster : NetworkBehaviour
         }
     }
 
-    public Vector2 TileIndex = new Vector2(-1, -1);
-
     private bool tileDimensionsChanged = true;
 
     [SerializeField]
@@ -82,7 +63,6 @@ public class TileRaycaster : NetworkBehaviour
     /// 
     /// </summary>
     /// <param name="tile"></param>
-    [ClientRpc]
     public void RpcSetTile(ScreenTile tile)
     {
         if(this.tile == null || this.tile.numTiles.x != tile.numTiles.x || this.tile.numTiles.y != tile.numTiles.y)
@@ -102,8 +82,7 @@ public class TileRaycaster : NetworkBehaviour
     /// 
     /// </summary>
     /// <param name="state"></param>
-    [ClientRpc]
-    public void RpcSetSceneState(RayCastState state)
+    public void RpcSetSceneState(RayCastStateMessage state)
     {
         // Set new state
         this.state = state;
@@ -128,7 +107,7 @@ public class TileRaycaster : NetworkBehaviour
     {
         if (stateChanged)
         {
-            //RenderTile();
+            RenderTile();
             stateChanged = false;
         }
     }
@@ -136,10 +115,9 @@ public class TileRaycaster : NetworkBehaviour
     /// <summary>
     /// 
     /// </summary>
-    [ClientRpc]
-    public void RpcRenderTile()
+    public void RenderTile()
     {
-        if (isServer || tile == null || TileIndex != tile.tileIndex)
+        if (tile == null)
         {
             return;
         }
@@ -191,13 +169,13 @@ public class TileRaycaster : NetworkBehaviour
         renderedImage.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
         renderedImage.Apply();
         byte[] textureData = renderedImage.EncodeToPNG();
-        int index = System.Convert.ToInt32(tile.numTiles.x * TileIndex.x + TileIndex.y);
-        TileNetworkManager.Instance.tileComposer.sendTextureToServer(index, textureData);
+        int index = System.Convert.ToInt32(tile.numTiles.x * tile.tileIndex.x + tile.tileIndex.y);
+        //TileNetworkManager.Instance.tileComposer.sendTextureToServer(index, textureData);
     }
 
     void SendTextureUpdate()
     {
-        byte[] textureData = renderedImage.EncodeToPNG();
+        //byte[] textureData = renderedImage.EncodeToPNG();
         //int numBytes = textureData.Length;
 
         // send the texture as parts to the server
@@ -211,11 +189,6 @@ public class TileRaycaster : NetworkBehaviour
     void Update()
     {
         //RenderTile();
-    }
-
-    // called on the client when he started
-    public override void OnStartClient()
-    {
     }
 
     /// <summary>
