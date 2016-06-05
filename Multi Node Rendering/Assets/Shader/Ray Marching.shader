@@ -11,8 +11,8 @@ Shader "Custom/Ray Marching/Ray Marching"
 	sampler2D _FrontTex;
 	sampler3D _VolumeTex;	
 	
-	#define STEP_CNT 256
-	#define STEP_SIZE 1 / 128
+	#define STEP_CNT 512
+	#define STEP_SIZE 1 / 512
 
 	/*#define STEP_CNT 128
 	#define STEP_SIZE 1 / 1024*/

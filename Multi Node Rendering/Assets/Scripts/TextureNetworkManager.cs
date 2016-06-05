@@ -30,6 +30,12 @@ public class TextureNetworkManager : MonoBehaviour
     private byte m_CommunicationChannel = 0;
     //@}
 
+    /// Server Gui
+    /// @{
+    private float _OpacityValue = 1.0F;
+    private bool _IsoSurfaceToggle = false;
+    /// @}
+
 
     // client settings
     //@{
@@ -112,9 +118,18 @@ public class TextureNetworkManager : MonoBehaviour
         }
         else
         {
-            if (GUI.Button(new Rect(10, 20, 150, 30), "stop connection"))
+            if (GUI.Button(new Rect(10, 10, 150, 30), "stop connection"))
             {
                 StopConnection();
+            }
+            if (_isServer)
+            {
+                GUI.Label(new Rect(10, 50, 100, 30), "Opacity " + _OpacityValue.ToString("0.00") + ":");
+                _OpacityValue = GUI.HorizontalSlider(new Rect(110, 50, 90, 30), _OpacityValue, 0.0F, 2.0F);
+                this.m_tileComposer.Opacity = _OpacityValue;
+
+                _IsoSurfaceToggle = GUI.Toggle(new Rect(10, 80, 150, 30), _IsoSurfaceToggle, "Iso Surface is " + (_IsoSurfaceToggle ? "On" : "Off"));
+                this.m_tileComposer.Pass = _IsoSurfaceToggle ? 1 : 0;
             }
         }
     }

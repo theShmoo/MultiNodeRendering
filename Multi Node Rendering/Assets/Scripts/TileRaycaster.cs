@@ -39,6 +39,7 @@ public class TileRaycaster : MonoBehaviour
         set
         {
             this.pass = value;
+            this.stateChanged = true;
         }
     }
     public float Opacity
@@ -47,6 +48,7 @@ public class TileRaycaster : MonoBehaviour
         set
         {
             this.opacity = value;
+            this.stateChanged = true;
         }
     }
 
@@ -99,48 +101,48 @@ public class TileRaycaster : MonoBehaviour
         return renderedImage;
     }
 
-//     private void OnRenderImage(RenderTexture src, RenderTexture dest)
-//     {
-//         if (tile != null)
-//         {
-//             Graphics.SetRenderTarget(dest);
-//             GL.Clear(true, true, Color.black);
-// 
-//             Vector2 tileIndex = tile.tileIndex;
-//             Vector2 numTiles = tile.numTiles;
-//             Texture2D image = renderedImage;
-// 
-//             texturedQuadMaterial.SetTexture("_MainTex", image);
-//             texturedQuadMaterial.SetPass(0);
-// 
-//             // Scale viewport rect to the tile position
-//             float sl = 1.0f - (2.0f * tileIndex.x / numTiles.x);
-//             float sr = -(sl - 2.0f / numTiles.x);
-//             float sb = 1.0f - (2.0f * tileIndex.y / numTiles.y);
-//             float st = -(sb - 2.0f / numTiles.y);
-// 
-//             float left = -1 * sl;
-//             float right = 1 * sr;
-//             float bottom = -1 * sb;
-//             float top = 1 * st;
-// 
-//             GL.Begin(GL.QUADS);
-//             {
-//                 GL.TexCoord2(0.0f, 0.0f);
-//                 GL.Vertex3(left, bottom, 0.0f);
-// 
-//                 GL.TexCoord2(1.0f, 0.0f);
-//                 GL.Vertex3(right, bottom, 0.0f);
-// 
-//                 GL.TexCoord2(1.0f, 1.0f);
-//                 GL.Vertex3(right, top, 0.0f);
-// 
-//                 GL.TexCoord2(0.0f, 1.0f);
-//                 GL.Vertex3(left, top, 0.0f);
-//             }
-//             GL.End();
-//         }
-//     }
+    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        if (tile != null)
+        {
+            Graphics.SetRenderTarget(dest);
+            GL.Clear(true, true, Color.black);
+
+            Vector2 tileIndex = tile.tileIndex;
+            Vector2 numTiles = tile.numTiles;
+            Texture2D image = renderedImage;
+
+            texturedQuadMaterial.SetTexture("_MainTex", image);
+            texturedQuadMaterial.SetPass(0);
+
+            // Scale viewport rect to the tile position
+            float sl = 1.0f - (2.0f * tileIndex.x / numTiles.x);
+            float sr = -(sl - 2.0f / numTiles.x);
+            float sb = 1.0f - (2.0f * tileIndex.y / numTiles.y);
+            float st = -(sb - 2.0f / numTiles.y);
+
+            float left = -1 * sl;
+            float right = 1 * sr;
+            float bottom = -1 * sb;
+            float top = 1 * st;
+
+            GL.Begin(GL.QUADS);
+            {
+                GL.TexCoord2(0.0f, 0.0f);
+                GL.Vertex3(left, bottom, 0.0f);
+
+                GL.TexCoord2(1.0f, 0.0f);
+                GL.Vertex3(right, bottom, 0.0f);
+
+                GL.TexCoord2(1.0f, 1.0f);
+                GL.Vertex3(right, top, 0.0f);
+
+                GL.TexCoord2(0.0f, 1.0f);
+                GL.Vertex3(left, top, 0.0f);
+            }
+            GL.End();
+        }
+    }
 
     /// <summary>
     /// 

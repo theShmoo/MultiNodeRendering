@@ -3,26 +3,6 @@
 using System;
 using System.Collections.Generic;
 
-#if UNITY_EDITOR
-using UnityEditor;
-
-[CustomEditor(typeof(TileComposer))]
-public class CustomInspector : Editor
-{
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
-
-        if (target.GetType() == typeof(TileComposer))
-        {
-            TileComposer getterSetter = (TileComposer)target;
-            getterSetter.Pass = getterSetter.pass;
-            getterSetter.Opacity = getterSetter.opacity;
-        }
-    }
-}
-#endif
-
 public class TileComposer : MonoBehaviour
 {
 
@@ -36,15 +16,12 @@ public class TileComposer : MonoBehaviour
     TextureNetworkManager textureNetworkManager;
 
     private bool active = false;
-    [SerializeField]
-    [Range(0, 2)]
-    public float opacity = 1;
+
+    private float opacity = 1;
 
     private float lastOpacity = 1;
 
-    [SerializeField]
-    [Range(0, 1)]
-    public int pass = 0;
+    private int pass = 0;
 
     private int lastPass = 0;
 
