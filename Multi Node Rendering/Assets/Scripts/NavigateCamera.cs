@@ -55,7 +55,7 @@ public class NavigateCamera : MonoBehaviour
 
     void Update()
     {
-        if (!TextureNetworkManager.Instance.IsServer)
+        if ( TextureNetworkManager.Instance == null || !TextureNetworkManager.Instance.IsServer)
             return;
 
         deltaTime = Time.realtimeSinceStartup - lastUpdateTime;

@@ -97,7 +97,6 @@ public class TextureNetworkManager : MonoBehaviour
 
     void OnGUI()
     {
-        GUI.Box(new Rect(5, 5, 450, 450), "window");
         if (!_isStarted)
         {
             m_ip = GUI.TextField(new Rect(10, 10, 250, 30), m_ip, 25);
@@ -126,7 +125,7 @@ public class TextureNetworkManager : MonoBehaviour
 	    if (!_isStarted)
             return;
 
-        ReceiveNetworkEvents();
+        StartCoroutine("ReceiveNetworkEvents");
 	}
 
     public void OnRaycasterParameterChanged(int pass, float opacity)
@@ -219,7 +218,7 @@ public class TextureNetworkManager : MonoBehaviour
         SendDataToClient(clientConnectionId, ref data);
     }
 
-    private void ReceiveNetworkEvents()
+    IEnumerator ReceiveNetworkEvents()
     {
         int recHostId;
         int connectionId;
@@ -264,26 +263,26 @@ public class TextureNetworkManager : MonoBehaviour
             case NetworkEventType.DisconnectEvent:
                 {
                     if (!_isServer)
-                        OnClientDisconnect(recHostId, connectionId);
-                    else
                         OnServerDisconnect(recHostId, connectionId);
+                    else
+                        OnClientDisconnect(recHostId, connectionId);
                     break;
                 }
         }
+
+        yield return null;
     }
     /// <summary>
     /// Called on the client that the server disconnected
     /// </summary>
     /// <param name="recHostId">the id of the host this client connected to</param>
     /// <param name="connectionId">the id of the connection</param>
-    private void OnClientDisconnect(int recHostId, int connectionId)
+    private void OnServerDisconnect(int recHostId, int connectionId)
     {
         if (recHostId != m_HostId || connectionId != m_ClientConnectionId)
             Debug.LogError(String.Format("Error: Client Connection {0} to Host {1} is invalid!", recHostId, connectionId));
 
         Debug.Log(String.Format("DisConnect from host {0} connection {1}", recHostId, connectionId));
-
-        OnClientsChanged();
     }
 
     /// <summary>
@@ -291,7 +290,7 @@ public class TextureNetworkManager : MonoBehaviour
     /// </summary>
     /// <param name="recHostId">the id of this host</param>
     /// <param name="connectionId">the id of the connection</param>
-    private void OnServerDisconnect(int recHostId, int connectionId)
+    private void OnClientDisconnect(int recHostId, int connectionId)
     {
         if (recHostId != m_HostId || m_RendererClientIds.Contains(connectionId) == false)
             Debug.LogError(String.Format("Error: Client Connection {0} to Host {1} is invalid!", recHostId, connectionId));
@@ -299,6 +298,7 @@ public class TextureNetworkManager : MonoBehaviour
         Debug.Log(String.Format("DisConnect from host {0} connection {1}", recHostId, connectionId));
 
         m_RendererClientIds.Remove(connectionId);
+        OnClientsChanged();
     }
 
     /// <summary>
