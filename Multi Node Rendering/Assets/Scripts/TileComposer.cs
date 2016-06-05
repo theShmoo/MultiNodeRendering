@@ -29,7 +29,7 @@ public class TileComposer : MonoBehaviour
     private Vector2 numTiles = new Vector2(0,0);
 
     public List<ScreenTile> tiles;
-    public List<Texture2D> renderedImages;
+    public Dictionary<Vector2,Texture2D> renderedImages;
 
     public Material texturedQuadMaterial;
 
@@ -40,9 +40,13 @@ public class TileComposer : MonoBehaviour
     [Range(0, 2)]
     public float opacity = 1;
 
+    private float lastOpacity = 1;
+
     [SerializeField]
     [Range(0, 1)]
     public int pass = 0;
+
+    private int lastPass = 0;
 
     public bool Active
     {
@@ -54,8 +58,12 @@ public class TileComposer : MonoBehaviour
     {
         get { return pass; }
         set {
-            this.pass = value;
-            OnRaycasterParameterChanged();
+            if(this.lastPass != value)
+            {
+                this.lastPass = this.pass;
+                this.pass = value;
+                OnRaycasterParameterChanged();
+            }
         }
     }
     public float Opacity
@@ -63,20 +71,25 @@ public class TileComposer : MonoBehaviour
         get { return opacity; }
         set
         {
-            this.opacity = value;
-            OnRaycasterParameterChanged();
+            if (this.lastOpacity != value)
+            {
+                this.lastOpacity = this.opacity;
+                this.opacity = value;
+                OnRaycasterParameterChanged();
+            }
         }
     }
 
     void OnRaycasterParameterChanged()
     {
-        TextureNetworkManager.Instance.OnRaycasterParameterChanged(pass, opacity);
+        if (TextureNetworkManager.Instance != null)
+            TextureNetworkManager.Instance.OnRaycasterParameterChanged(pass, opacity);
     }
 
     // Use this for initialization
 	void Start () {
         tiles = new List<ScreenTile>();
-        renderedImages = new List<Texture2D>();
+        renderedImages = new Dictionary<Vector2, Texture2D>();
         NumTilesChanged(numTiles);
 	}
 	
@@ -85,18 +98,11 @@ public class TileComposer : MonoBehaviour
         // nothing to do
 	}
 
-    public void SetTexture(int iTileIndex, byte[] data)
+    public void SetTexture(Vector2 tileIndex, byte[] data)
     {
-        var tex = TileNetworkManager.Instance.tileComposer.renderedImages[iTileIndex];
+        var tex = renderedImages[tileIndex];
         tex.LoadImage(data);
         tex.Apply();
-    }
-
-    public void sendTextureToServer(int iTileIndex, byte[] textureData)
-    {
-        //byte error;
-        //NetworkTransport.Send(socketId, connectionId, myReliableChannelId, textureData, textureData.Length, out error);
-        //LogNetworkError(error);
     }
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -108,11 +114,11 @@ public class TileComposer : MonoBehaviour
 
             if (tiles == null) return;
 
-            for (int i = 0; i < tiles.Count; i++)
+            foreach (var tile in tiles)
             {
-                Vector2 tileIndex = tiles[i].tileIndex;
-                Vector2 numTiles = tiles[i].numTiles;
-                Texture2D image = renderedImages[i];
+                Vector2 tileIndex = tile.tileIndex;
+                Vector2 numTiles = tile.numTiles;
+                Texture2D image = renderedImages[tileIndex];
 
                 texturedQuadMaterial.SetTexture("_MainTex", image);
                 texturedQuadMaterial.SetPass(0);
@@ -160,8 +166,8 @@ public class TileComposer : MonoBehaviour
         renderedImages.Clear();
 
 
-        int screenWidth = 64;
-        int screenHeight = 32;
+        int screenWidth = Screen.width;
+        int screenHeight = Screen.height;
 
         int width = (int)(screenWidth / numTiles.x);
         int height = (int)(screenHeight / numTiles.y);
@@ -187,44 +193,8 @@ public class TileComposer : MonoBehaviour
                 tiles.Add(tile);
                 Texture2D tex = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
                 tex.wrapMode = TextureWrapMode.Clamp;
-                renderedImages.Add(tex);
+                renderedImages.Add(tile.tileIndex,tex);
             }
         }
-    }
-
-    /// <summary>
-    /// send rpc calls to all clients and set which tile they are responsible for
-    /// </summary>
-    /// <param name="hostConnectionId"></param>
-    public void ArrangeTilesToRaycaster(int hostConnectionId)
-    {
-//         int i = 0;
-//         this.raycaster.Clear();
-//         foreach (var conn in NetworkServer.connections)
-//         {
-//             // can be null for disconnected clients or the host
-//             if (conn == null || conn.connectionId == hostConnectionId)
-//                 continue;
-// 
-//             foreach (var player in conn.playerControllers)
-//             {
-//                 var r = player.gameObject.GetComponent<TileRaycaster>();
-//                
-//                 // send the tile index to the client
-// //                 var msg = new TileIndexMessage();
-// //                 msg.tileIndex = tiles[i].tileIndex;
-// //                 msg.netId = r.netId;
-// //                 conn.Send(TileIndexMessage.MSG_ID, msg);
-// 
-//                 r.RpcSetTile(tiles[i]);
-//                 this.raycaster.Add(r);
-//                 i++;
-//                 if (i >= tiles.Count)
-//                     break;
-//             }
-//             if (i >= tiles.Count)
-//                 break;
-//         }
-        
     }
 }

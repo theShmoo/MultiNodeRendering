@@ -112,6 +112,49 @@ public class TileRaycaster : MonoBehaviour
         }
     }
 
+    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        if (tile != null)
+        {
+            Graphics.SetRenderTarget(dest);
+            GL.Clear(true, true, Color.black);
+
+            Vector2 tileIndex = tile.tileIndex;
+            Vector2 numTiles = tile.numTiles;
+            Texture2D image = renderedImage;
+
+            texturedQuadMaterial.SetTexture("_MainTex", image);
+            texturedQuadMaterial.SetPass(0);
+
+            // Scale viewport rect to the tile position
+            float sl = 1.0f - (2.0f * tileIndex.x / numTiles.x);
+            float sr = -(sl - 2.0f / numTiles.x);
+            float sb = 1.0f - (2.0f * tileIndex.y / numTiles.y);
+            float st = -(sb - 2.0f / numTiles.y);
+
+            float left = -1 * sl;
+            float right = 1 * sr;
+            float bottom = -1 * sb;
+            float top = 1 * st;
+
+            GL.Begin(GL.QUADS);
+            {
+                GL.TexCoord2(0.0f, 0.0f);
+                GL.Vertex3(left, bottom, 0.0f);
+
+                GL.TexCoord2(1.0f, 0.0f);
+                GL.Vertex3(right, bottom, 0.0f);
+
+                GL.TexCoord2(1.0f, 1.0f);
+                GL.Vertex3(right, top, 0.0f);
+
+                GL.TexCoord2(0.0f, 1.0f);
+                GL.Vertex3(left, top, 0.0f);
+            }
+            GL.End();
+        }
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -168,22 +211,8 @@ public class TileRaycaster : MonoBehaviour
 
         renderedImage.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
         renderedImage.Apply();
-        byte[] textureData = renderedImage.EncodeToPNG();
-        int index = System.Convert.ToInt32(tile.numTiles.x * tile.tileIndex.x + tile.tileIndex.y);
-        //TileNetworkManager.Instance.tileComposer.sendTextureToServer(index, textureData);
-    }
-
-    void SendTextureUpdate()
-    {
-        //byte[] textureData = renderedImage.EncodeToPNG();
-        //int numBytes = textureData.Length;
-
-        // send the texture as parts to the server
-        // todo
-        // send the end package
-        // todo
-
-        //this.gameObject.GetComponent<TileComposer>().(index, textureData);
+        byte[] textureData = renderedImage.EncodeToJPG(55);
+        TextureNetworkManager.Instance.SendTextureToServer(tile.tileIndex, ref textureData);
     }
 
     void Update()

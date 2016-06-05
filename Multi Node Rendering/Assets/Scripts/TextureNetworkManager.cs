@@ -65,6 +65,11 @@ public class TextureNetworkManager : MonoBehaviour
     private bool _isServer = false;
     //@}
 
+    public bool IsServer
+    {
+        get { return _isServer; }
+    }
+
     /// <summary>
     /// This Function is called once the script awakes, even before Enable() and Start()
     /// </summary>
@@ -84,7 +89,7 @@ public class TextureNetworkManager : MonoBehaviour
 	void Start () {
         //create configuration containing one reliable channel
         m_Config = new ConnectionConfig();
-        m_CommunicationChannel = m_Config.AddChannel(QosType.ReliableSequenced);
+        m_CommunicationChannel = m_Config.AddChannel(QosType.ReliableFragmented);
 
         // default number of clients is 12
         m_maxNumberClients = 12;
@@ -121,17 +126,6 @@ public class TextureNetworkManager : MonoBehaviour
 	    if (!_isStarted)
             return;
 
-        if(_isServer)
-        {
-            // Set current state to TileRaycaster
-            var msg = new RayCastStateMessage();
-            msg.volumeWorldMatrix = Matrix4x4.identity;
-            msg.viewMatrix = Camera.main.worldToCameraMatrix;
-            msg.projectionMatrix = Camera.main.projectionMatrix;
-
-            SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);
-        }
-
         ReceiveNetworkEvents();
 	}
 
@@ -151,6 +145,32 @@ public class TextureNetworkManager : MonoBehaviour
 
             SendMessageToAllClients(msg,RenderParameterMessage.MSG_ID);
         }
+    }
+
+    public void OnCameraParameterChanged()
+    {
+        if (!_isServer)
+            return;
+
+        // Set current state to TileRaycaster
+        var msg = new RayCastStateMessage();
+        msg.volumeWorldMatrix = Matrix4x4.identity;
+        msg.viewMatrix = Camera.main.worldToCameraMatrix;
+        msg.projectionMatrix = Camera.main.projectionMatrix;
+
+        SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);
+    }
+
+    public void SendTextureToServer(Vector2 tileIndex, ref byte[] textureData)
+    {
+        if (_isServer)
+            return;
+
+        NetworkWriter writer = new NetworkWriter();
+        writer.Write(tileIndex);
+        writer.WriteBytesAndSize(textureData,textureData.Length);
+        byte[] data = writer.ToArray();
+        SendDataToServer(ref data);
     }
 
     private void OnClientsChanged()
@@ -178,7 +198,7 @@ public class TextureNetworkManager : MonoBehaviour
 
     private void SendMessageToAllClients(MessageBase msg, short msgType)
     {
-        byte[] data = new byte[1024];
+        byte[] data = new byte[256];
         NetworkWriter netWriter = new NetworkWriter(data);
         netWriter.Write(msgType);
         msg.Serialize(netWriter);
@@ -191,7 +211,7 @@ public class TextureNetworkManager : MonoBehaviour
 
     private void SendMessageToClient(MessageBase msg, short msgType, int clientConnectionId)
     {
-        byte[] data = new byte[1024];
+        byte[] data = new byte[256];
         NetworkWriter netWriter = new NetworkWriter(data);
         netWriter.Write(msgType);
         msg.Serialize(netWriter);
@@ -204,8 +224,11 @@ public class TextureNetworkManager : MonoBehaviour
         int recHostId;
         int connectionId;
         int channelId;
-        byte[] recBuffer = new byte[1024];
-        int bufferSize = 1024;
+        int bufferSize = 256;
+        // bigger buffer size for the server!
+        if(_isServer)
+            bufferSize = 32768;
+        byte[] recBuffer = new byte[bufferSize];
         int dataSize;
         byte error;
         NetworkEventType recData = NetworkTransport.Receive(out recHostId, out connectionId, out channelId, recBuffer, bufferSize, out dataSize, out error);
@@ -319,8 +342,14 @@ public class TextureNetworkManager : MonoBehaviour
     /// <param name="recBuffer"></param>
     private void OnDataFromClientReceived(int clientConnectionId, int dataSize, ref byte[] recBuffer)
     {
-        //byte[] bytes = new byte[0];
-        //SendDataToClient(clientConnectionId, ref bytes);
+        // receive the texture of a tile:
+        NetworkReader netReader = new NetworkReader(recBuffer);
+        Vector2 tileIndex = netReader.ReadVector2();
+        byte[] data = netReader.ReadBytesAndSize();
+        if (data != null)
+        {
+            this.m_tileComposer.SetTexture(tileIndex, data);
+        }        
     }
 
     /// <summary>
@@ -443,7 +472,7 @@ public class TextureNetworkManager : MonoBehaviour
             var msg = tiles[i].GetTileMessage();
             SendMessageToClient(msg,TileMessage.MSG_ID,client);
             i++;
-            if (i > tiles.Count)
+            if (i >= tiles.Count)
                 break;
         }
     }

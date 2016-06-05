@@ -1,12 +1,11 @@
 using UnityEngine;
-using UnityEngine.Networking;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 [ExecuteInEditMode]
-public class NavigateCamera : NetworkBehaviour
+public class NavigateCamera : MonoBehaviour
 {
     public float DefaultDistance = 5.0f;
 
@@ -40,6 +39,8 @@ public class NavigateCamera : NetworkBehaviour
     private float deltaTime = 0;
     private float lastUpdateTime = 0;
 
+    private bool _updated = false;
+
     /*****/
 
     void OnEnable()
@@ -54,7 +55,7 @@ public class NavigateCamera : NetworkBehaviour
 
     void Update()
     {
-        if (!isLocalPlayer)
+        if (!TextureNetworkManager.Instance.IsServer)
             return;
 
         deltaTime = Time.realtimeSinceStartup - lastUpdateTime;
@@ -64,24 +65,33 @@ public class NavigateCamera : NetworkBehaviour
         {
             TargetPosition += gameObject.transform.forward * TranslationSpeed * deltaTime; 
             transform.position += gameObject.transform.forward * TranslationSpeed * deltaTime; 
+            _updated = true;
         }
 
         if (backward)
         {
             TargetPosition -= gameObject.transform.forward * TranslationSpeed * deltaTime;
             transform.position -= gameObject.transform.forward * TranslationSpeed * deltaTime; 
+            _updated = true;
         }
 
         if (right)
         {
             TargetPosition += gameObject.transform.right * TranslationSpeed * deltaTime;
             transform.position += gameObject.transform.right * TranslationSpeed * deltaTime; 
+            _updated = true;
         }
 
         if (left)
         {
             TargetPosition -= gameObject.transform.right * TranslationSpeed * deltaTime;
             transform.position -= gameObject.transform.right * TranslationSpeed * deltaTime; 
+            _updated = true;
+        }
+
+        if(_updated)
+        {
+            OnCameraChanged();
         }
     }
 
@@ -95,6 +105,7 @@ public class NavigateCamera : NetworkBehaviour
 
         transform.rotation = rotation;
         transform.position = position;
+        _updated = true;
     }
 
     void DoFpsRotation()
@@ -106,6 +117,7 @@ public class NavigateCamera : NetworkBehaviour
 
         transform.rotation = rotation;
         TargetPosition = transform.position + transform.forward * Distance;
+        _updated = true;
     }
 
     void DoPanning()
@@ -115,6 +127,7 @@ public class NavigateCamera : NetworkBehaviour
 
         TargetPosition -= transform.right * Event.current.delta.x * PannigSpeed;
         transform.position -= transform.right * Event.current.delta.x * PannigSpeed;
+        _updated = true;
     }
 
     
@@ -128,6 +141,7 @@ public class NavigateCamera : NetworkBehaviour
             TargetPosition = transform.position + transform.forward * DefaultDistance;
             Distance = Vector3.Distance(TargetPosition, transform.position);
         }
+        _updated = true;
     }
     
     private void OnGUI()
@@ -169,6 +183,7 @@ public class NavigateCamera : NetworkBehaviour
 
             Distance = DefaultDistance;
             transform.position = TargetPosition - transform.forward*Distance;
+            _updated = true;
         }
 
         if (Event.current.keyCode == KeyCode.R)
@@ -176,6 +191,7 @@ public class NavigateCamera : NetworkBehaviour
             Distance = DefaultDistance;
             TargetPosition = Vector3.zero;
             transform.position = TargetPosition - transform.forward*Distance;
+            _updated = true;
         }
 
         if (Event.current.keyCode == KeyCode.W)
@@ -196,6 +212,15 @@ public class NavigateCamera : NetworkBehaviour
         if (Event.current.keyCode == KeyCode.D)
         {
             right = Event.current.type == EventType.KeyDown;
+        }
+    }
+
+    private void OnCameraChanged()
+    {
+        if(_updated)
+        {
+            TextureNetworkManager.Instance.OnCameraParameterChanged();
+            _updated = false;
         }
     }
 }

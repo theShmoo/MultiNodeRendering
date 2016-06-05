@@ -116,7 +116,7 @@ public class TileNetworkManager : NetworkManager {
             int iClientsY = nNumClients / iClientsX;
             Vector2 vTiles = new Vector2(iClientsX, iClientsY);
             tileComposer.NumTilesChanged(vTiles);
-            tileComposer.ArrangeTilesToRaycaster(hostConnection.connectionId);
+            //tileComposer.ArrangeTilesToRaycaster(hostConnection.connectionId);
             tileComposer.Active = true;
         }
         else

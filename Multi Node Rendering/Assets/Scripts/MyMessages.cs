@@ -27,15 +27,45 @@ public class TileMessage : MessageBase
 
     public float aspect;
 
-    public Vector2 numTiles;
-
-    public Vector2 tileIndex;
-
     public int screenWidth;
 
     public int screenHeight;
 
+    public Vector2 numTiles;
+
+    public Vector2 tileIndex;
+
     public static short MSG_ID = 1001;
+
+    // This method would be generated
+    public override void Deserialize(NetworkReader reader)
+    {
+        fov = reader.ReadSingle();
+        np = reader.ReadSingle();
+        fp = reader.ReadSingle();
+        aspect = reader.ReadSingle();
+
+        screenWidth = reader.ReadInt32();
+        screenHeight = reader.ReadInt32();
+
+        numTiles = reader.ReadVector2();
+        tileIndex = reader.ReadVector2();
+    }
+
+    // This method would be generated
+    public override void Serialize(NetworkWriter writer)
+    {
+        writer.Write(fov);
+        writer.Write(np);
+        writer.Write(fp);
+        writer.Write(aspect);
+
+        writer.Write(screenWidth);
+        writer.Write(screenHeight);
+
+        writer.Write(numTiles);
+        writer.Write(tileIndex);
+    }
 }
 
 public class RenderParameterMessage : MessageBase
