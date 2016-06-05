@@ -95,7 +95,7 @@ public class TextureNetworkManager : MonoBehaviour
 	void Start () {
         //create configuration containing one reliable channel
         m_Config = new ConnectionConfig();
-        m_CommunicationChannel = m_Config.AddChannel(QosType.ReliableFragmented);
+        m_CommunicationChannel = m_Config.AddChannel(QosType.UnreliableFragmented);
 
         // default number of clients is 12
         m_maxNumberClients = 12;
@@ -264,8 +264,6 @@ public class TextureNetworkManager : MonoBehaviour
 
             case NetworkEventType.DataEvent:
                 {
-                    Debug.Log(String.Format("Received event host {0} connection {1} channel {2} message length {3}", recHostId, connectionId, channelId, dataSize));
-
                     if (!_isServer)
                         OnDataFromServerReceived(dataSize, ref recBuffer);
                     else if (m_RendererClientIds.Contains(connectionId))
@@ -343,10 +341,6 @@ public class TextureNetworkManager : MonoBehaviour
             tile.setFromTileMessage(msg);
             m_tileRaycaster.RpcSetTile(tile);
         }
-        //byte[] bytes = new byte[0];
-
-        // send back
-        //SendDataToServer(ref bytes);
     }
 
     /// <summary>
