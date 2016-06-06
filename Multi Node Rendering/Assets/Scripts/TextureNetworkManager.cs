@@ -170,6 +170,7 @@ public class TextureNetworkManager : MonoBehaviour
         var msg = new RayCastStateMessage();
         msg.volumeWorldMatrix = Matrix4x4.identity;
         msg.viewMatrix = Camera.main.worldToCameraMatrix;
+        msg.cameraPos = Camera.main.transform.position;
         msg.projectionMatrix = Camera.main.projectionMatrix;
 
         SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);

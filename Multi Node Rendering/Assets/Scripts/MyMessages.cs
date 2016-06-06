@@ -8,11 +8,15 @@ public class RayCastStateMessage : MessageBase
 {
     public long deltaTime;
 
+    public Vector3 cameraPos;
+
     public Matrix4x4 viewMatrix;
 
     public Matrix4x4 projectionMatrix;
 
     public Matrix4x4 volumeWorldMatrix;
+
+    
 
     public static short MSG_ID = 1000;
 }

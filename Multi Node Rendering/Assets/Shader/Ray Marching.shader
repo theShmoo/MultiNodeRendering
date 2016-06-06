@@ -7,6 +7,7 @@ Shader "Custom/Ray Marching/Ray Marching"
 	
 	float _Opacity;
 	float4 _TextureSize;
+	float3 _CameraPos;
 	sampler2D _BackTex;
 	sampler2D _FrontTex;
 	sampler3D _VolumeTex;	
@@ -29,10 +30,16 @@ Shader "Custom/Ray Marching/Ray Marching"
 		float3 rayStartPos = tex2D(_FrontTex, i.uv).xyz;
 		if(rayEndPos.x == 0.0 && rayEndPos.y == 0.0 && rayEndPos.z == 0.0)
 			discard;
-		//if(rayEndPos.x == rayStartPos.x && rayEndPos.y == rayStartPos.y && rayEndPos.z == rayStartPos.z)
-		//	discard;
-				
-		float3 rayDir = normalize(rayEndPos - rayStartPos);
+
+		float3 rayDir = rayEndPos - rayStartPos;
+
+		
+		//if(length(rayEndPos - rayStartPos) < length(rayEndPos - _CameraPos))	
+		//	rayDir = rayEndPos - 	
+		
+
+		rayDir = normalize(rayDir);			
+
 		float3 rayStep = rayDir * STEP_SIZE;
 		
 		float4 finalColor = 0;

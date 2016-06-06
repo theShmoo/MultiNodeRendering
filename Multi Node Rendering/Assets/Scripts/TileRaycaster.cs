@@ -195,7 +195,7 @@ public class TileRaycaster : MonoBehaviour
         rayMarchMaterial.SetTexture("_FrontTex", frontDepth);
         rayMarchMaterial.SetTexture("_VolumeTex", volumeTexture);
         rayMarchMaterial.SetVector("_TextureSize", new Vector4(volumeTexture.width, volumeTexture.height, volumeTexture.depth));
-
+        rayMarchMaterial.SetVector("_CameraPos", state.cameraPos); 
         Graphics.Blit(null, compositeBuffer, rayMarchMaterial, pass);
 
         renderedImage.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
