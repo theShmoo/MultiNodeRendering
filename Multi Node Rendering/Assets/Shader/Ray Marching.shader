@@ -28,6 +28,7 @@ Shader "Custom/Ray Marching/Ray Marching"
 	
 		float3 rayEndPos = tex2D(_BackTex, i.uv).xyz;
 		float3 rayStartPos = tex2D(_FrontTex, i.uv).xyz;
+		//rayStartPos = _CameraPos;
 		if(rayEndPos.x == 0.0 && rayEndPos.y == 0.0 && rayEndPos.z == 0.0)
 			discard;
 

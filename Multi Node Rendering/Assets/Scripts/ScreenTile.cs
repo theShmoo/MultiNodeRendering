@@ -106,6 +106,7 @@ public class ScreenTile
     /// <summary>
     /// Computes an off center perspective projection matrix
     /// </summary>
+    
     private static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far)
     {
 
@@ -117,7 +118,6 @@ public class ScreenTile
         float d = -(2.0F * far * near) / (far - near);
         float e = -1.0F;
         Matrix4x4 m = new Matrix4x4();
-        //Matrix4x4.Perspective()
         m[0, 0] = x;
         m[0, 1] = 0;
         m[0, 2] = a;
