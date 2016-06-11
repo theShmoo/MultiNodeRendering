@@ -4,7 +4,7 @@ using UnityEngine.Networking;
 /// <summary>
 /// This class represents a state structure for the scene/animation for distributed rendering systems to transmit all neccessary parameters to the render node
 /// </summary>
-public class RayCastStateMessage : MessageBase
+public class SceneStateMessage : MessageBase
 {
     public long deltaTime;
 
@@ -72,7 +72,7 @@ public class TileMessage : MessageBase
     }
 }
 
-public class RenderParameterMessage : MessageBase
+public class RaycastParameterMessage : MessageBase
 {
     public int pass;
 

@@ -12,7 +12,7 @@ public class TileRaycaster : MonoBehaviour
     private ScreenTile tile;
 
     // State object
-    private RayCastStateMessage state;
+    private SceneStateMessage state;
     private bool stateChanged = false;
     private Vector2 numTiles;
 
@@ -84,7 +84,7 @@ public class TileRaycaster : MonoBehaviour
     /// 
     /// </summary>
     /// <param name="state"></param>
-    public void RpcSetSceneState(RayCastStateMessage state)
+    public void RpcSetSceneState(SceneStateMessage state)
     {
         // Set new state
         this.state = state;

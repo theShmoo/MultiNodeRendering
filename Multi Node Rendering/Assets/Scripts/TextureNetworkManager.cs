@@ -37,6 +37,9 @@ public class TextureNetworkManager : MonoBehaviour
     /// @}
 
 
+    public float updateRate = 0.1F;
+    public float updateCounter = 0F;
+
     // client settings
     //@{
     /// <summary>
@@ -133,14 +136,38 @@ public class TextureNetworkManager : MonoBehaviour
             }
         }
     }
+   
+    private bool raycastParameterChanged = false;
+    private RaycastParameterMessage raycastParameterMessage;
+    private bool sceneStateChanged = false;
+    private SceneStateMessage sceneStateMessage;
+
+
 
 	// Update is called once per frame
 	void Update () 
     {
+
 	    if (!_isStarted)
             return;
-
         StartCoroutine("ReceiveNetworkEvents");
+        
+        updateCounter += Time.deltaTime;
+        
+        if(updateCounter > updateRate)
+        {
+            updateCounter -= updateRate;
+            if (raycastParameterChanged)
+            {
+                SendMessageToAllClients(raycastParameterMessage, RaycastParameterMessage.MSG_ID);
+                raycastParameterChanged = false;
+            }
+            if (sceneStateChanged)
+            {
+                SendMessageToAllClients(sceneStateMessage, SceneStateMessage.MSG_ID);
+                sceneStateChanged = false;
+            }
+        }
 	}
 
     public void OnRaycasterParameterChanged(int pass, float opacity)
@@ -153,11 +180,12 @@ public class TextureNetworkManager : MonoBehaviour
         }
         else
         {
-            var msg = new RenderParameterMessage();
+            var msg = new RaycastParameterMessage();
             msg.opacity = opacity;
             msg.pass = pass;
-
-            SendMessageToAllClients(msg,RenderParameterMessage.MSG_ID);
+            raycastParameterMessage = msg;
+            raycastParameterChanged = true;
+           // SendMessageToAllClients(msg,RenderParameterMessage.MSG_ID);
         }
     }
 
@@ -167,13 +195,14 @@ public class TextureNetworkManager : MonoBehaviour
             return;
 
         // Set current state to TileRaycaster
-        var msg = new RayCastStateMessage();
+        var msg = new SceneStateMessage();
         msg.volumeWorldMatrix = Matrix4x4.identity;
         msg.viewMatrix = Camera.main.worldToCameraMatrix;
         msg.cameraPos = Camera.main.transform.position;
         msg.projectionMatrix = Camera.main.projectionMatrix;
-
-        SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);
+        sceneStateMessage = msg;
+        sceneStateChanged = true;
+       // SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);
     }
 
     public void SendTextureToServer(Vector2 tileIndex, ref byte[] textureData)
@@ -324,14 +353,14 @@ public class TextureNetworkManager : MonoBehaviour
     {
         NetworkReader netReader = new NetworkReader(recBuffer);
         short msgType = netReader.ReadInt16();
-        if (msgType == RayCastStateMessage.MSG_ID)
+        if (msgType == SceneStateMessage.MSG_ID)
         {
-            var msg = netReader.ReadMessage<RayCastStateMessage>();
+            var msg = netReader.ReadMessage<SceneStateMessage>();
             m_tileRaycaster.RpcSetSceneState(msg);
         }
-        else if (msgType == RenderParameterMessage.MSG_ID)
+        else if (msgType == RaycastParameterMessage.MSG_ID)
         {
-            var msg = netReader.ReadMessage<RenderParameterMessage>();
+            var msg = netReader.ReadMessage<RaycastParameterMessage>();
             m_tileRaycaster.Pass = msg.pass;
             m_tileRaycaster.Opacity = msg.opacity;
         }
