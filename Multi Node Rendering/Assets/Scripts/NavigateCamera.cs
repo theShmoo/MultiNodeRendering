@@ -11,8 +11,8 @@ public class NavigateCamera : MonoBehaviour
 
     public float AcrBallRotationSpeed = 0.25f;
     public float FpsRotationSpeed = 0.25f;
-    public float TranslationSpeed = 20.0f;
-    public float ScrollingSpeed = 2.0f;
+    public float TranslationSpeed = 10.0f;
+    public float ScrollingSpeed = 1.0f;
     public float PannigSpeed = 0.25f;
 
     public Vector3 TargetPosition;
