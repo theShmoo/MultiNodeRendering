@@ -219,7 +219,7 @@ public class NavigateCamera : MonoBehaviour
     {
         if(_updated)
         {
-            TextureNetworkManager.Instance.OnCameraParameterChanged();
+            TextureNetworkManager.Instance.OnSceneStateChanged(Matrix4x4.identity, Camera.main.worldToCameraMatrix, Camera.main.projectionMatrix, Camera.main.transform.position);
             _updated = false;
         }
     }

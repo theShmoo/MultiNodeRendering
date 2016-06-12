@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54421cfc8d57b5d469a77397fac72146, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  volumeTexture: {fileID: 11700000, guid: 56524d32cba7cc241bd18af4fb5c5c5b, type: 2}
+  volumeTexture: {fileID: 11700000, guid: 525e040c5a2614547881c1acedd2e65f, type: 2}
   boundingBox: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   depthPassMaterial: {fileID: 2100000, guid: c466d2da991139a44b833b518385e330, type: 2}
   rayMarchMaterial: {fileID: 2100000, guid: 22f4362a2e8704e42ae4b7cad3c50896, type: 2}
@@ -390,6 +390,8 @@ MonoBehaviour:
   m_ip: 127.0.0.1
   m_port: 7075
   m_maxNumberClients: 5
+  updateRate: 0.1
+  updateCounter: 0
   m_tileComposer: {fileID: 0}
   m_tileRaycaster: {fileID: 0}
 --- !u!1 &1701397596

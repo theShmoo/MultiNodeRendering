@@ -37,7 +37,7 @@ public class TextureNetworkManager : MonoBehaviour
     /// @}
 
 
-    public float updateRate = 0.1F;
+    public float updateRate = 0.05F;
     public float updateCounter = 0F;
 
     // client settings
@@ -137,11 +137,11 @@ public class TextureNetworkManager : MonoBehaviour
         }
     }
    
+
     private bool raycastParameterChanged = false;
     private RaycastParameterMessage raycastParameterMessage;
     private bool sceneStateChanged = false;
     private SceneStateMessage sceneStateMessage;
-
 
 
 	// Update is called once per frame
@@ -189,17 +189,19 @@ public class TextureNetworkManager : MonoBehaviour
         }
     }
 
-    public void OnCameraParameterChanged()
+
+
+    public void OnSceneStateChanged(Matrix4x4 volumeWorldMatrix, Matrix4x4 viewMatrix, Matrix4x4 projectionMatrix, Vector3 cameraPos)
     {
         if (!_isServer)
             return;
 
         // Set current state to TileRaycaster
         var msg = new SceneStateMessage();
-        msg.volumeWorldMatrix = Matrix4x4.identity;
-        msg.viewMatrix = Camera.main.worldToCameraMatrix;
-        msg.cameraPos = Camera.main.transform.position;
-        msg.projectionMatrix = Camera.main.projectionMatrix;
+        msg.volumeWorldMatrix = volumeWorldMatrix;
+        msg.viewMatrix = viewMatrix;
+        msg.cameraPos = cameraPos;
+        msg.projectionMatrix = projectionMatrix;
         sceneStateMessage = msg;
         sceneStateChanged = true;
        // SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);
