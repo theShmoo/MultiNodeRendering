@@ -34,11 +34,13 @@ public class TextureNetworkManager : MonoBehaviour
     /// @{
     private float _OpacityValue = 1.0F;
     private bool _IsoSurfaceToggle = false;
+    public float _UpdatesPerSecond = 20.0f;
     /// @}
 
 
-    public float updateRate = 0.05F;
-    public float updateCounter = 0F;
+
+    
+    private float updateCounter = 0F;
 
     // client settings
     //@{
@@ -133,6 +135,9 @@ public class TextureNetworkManager : MonoBehaviour
 
                 _IsoSurfaceToggle = GUI.Toggle(new Rect(10, 80, 150, 30), _IsoSurfaceToggle, "Iso Surface is " + (_IsoSurfaceToggle ? "On" : "Off"));
                 this.m_tileComposer.Pass = _IsoSurfaceToggle ? 1 : 0;
+
+                GUI.Label(new Rect(10, 110, 120, 30), "Updates/Sec " + _UpdatesPerSecond.ToString("0.00") + ":");
+                _UpdatesPerSecond = GUI.HorizontalSlider(new Rect(130, 110, 90, 30), _UpdatesPerSecond, 0.1F, 60.0F);
             }
         }
     }
@@ -153,10 +158,11 @@ public class TextureNetworkManager : MonoBehaviour
         StartCoroutine("ReceiveNetworkEvents");
         
         updateCounter += Time.deltaTime;
-        
-        if(updateCounter > updateRate)
+        float tickTime = 1.0f / _UpdatesPerSecond;
+
+        if (updateCounter > tickTime)
         {
-            updateCounter -= updateRate;
+            updateCounter -= tickTime;
             if (raycastParameterChanged)
             {
                 SendMessageToAllClients(raycastParameterMessage, RaycastParameterMessage.MSG_ID);

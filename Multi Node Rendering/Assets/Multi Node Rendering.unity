@@ -390,7 +390,7 @@ MonoBehaviour:
   m_ip: 127.0.0.1
   m_port: 7075
   m_maxNumberClients: 5
-  updateRate: 0.1
+  updateRate: 0.05
   updateCounter: 0
   m_tileComposer: {fileID: 0}
   m_tileRaycaster: {fileID: 0}
