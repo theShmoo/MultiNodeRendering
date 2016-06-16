@@ -3,13 +3,25 @@
 using UnityEditor;
 using System.Collections;
 
+/// <summary>
+/// A class to load a 3D Volume into unity. Only for the use in the unity editor
+/// </summary>
 [ExecuteInEditMode]
 public class VolumeLoader : MonoBehaviour {
 
+    /// <summary>
+    /// the slices of the volume dataset
+    /// </summary>
     public Texture2D[] slices;
-    public Texture3D VolumeTexture;
 
-	// Use this for initialization
+    /// <summary>
+    /// the volume texture
+    /// </summary>
+    public Texture3D VolumeTexture = null;
+
+	/// <summary>
+    /// Initialize the Script 
+    /// </summary>
 	void Start () {
 	    if (VolumeTexture == null)
         {
@@ -17,8 +29,11 @@ public class VolumeLoader : MonoBehaviour {
         }
 	}
 	
-	// Update is called once per frame
-	void Update () {
+	/// <summary>
+    /// Update is called once per frame
+    /// </summary>
+	void Update () 
+    {
 	
 	}
 

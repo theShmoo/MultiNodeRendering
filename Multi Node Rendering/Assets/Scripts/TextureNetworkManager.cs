@@ -5,6 +5,9 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
+/// <summary>
+/// This class manages the network communication between the render composer and the render nodes
+/// </summary>
 [RequireComponent(typeof(Camera))]
 public class TextureNetworkManager : MonoBehaviour
 {
@@ -22,24 +25,39 @@ public class TextureNetworkManager : MonoBehaviour
 
     /// global settings:
     //@{
+
+    /// <summary>
+    /// The ip address the server is listening to or the client connects to
+    /// </summary>
     public string m_ip = "127.0.0.1";
+    
+    /// <summary>
+    /// The port the server is listening to or the client connects to
+    /// </summary>    
     public int m_port = 7075;
+
+    /// <summary>
+    /// The maximum number of clients the server supports
+    /// </summary>    
     [Range(5, 50)]
     public int m_maxNumberClients;
+
     private ConnectionConfig m_Config = null;
     private byte m_CommunicationChannel = 0;
+
     //@}
 
     /// Server Gui
     /// @{
     private float _OpacityValue = 1.0F;
     private bool _IsoSurfaceToggle = false;
+
+    /// <summary>
+    /// The updates per seconds the composer sends to the clients
+    /// </summary>    
     public float _UpdatesPerSecond = 20.0f;
     /// @}
 
-
-
-    
     private float updateCounter = 0F;
 
     // client settings
@@ -60,7 +78,14 @@ public class TextureNetworkManager : MonoBehaviour
 
     private HashSet<int> m_RendererClientIds = new HashSet<int>();
 
+    /// <summary>
+    /// The tile composer of the server
+    /// </summary>    
     public TileComposer m_tileComposer = null;
+    
+    /// <summary>
+    /// The tile raycaster of the client
+    /// </summary>
     public TileRaycaster m_tileRaycaster = null;
     //@}
 
@@ -76,13 +101,18 @@ public class TextureNetworkManager : MonoBehaviour
     private bool _isServer = false;
     //@}
 
+
+    /// <summary>
+    /// Check if this instance is a server or a client
+    /// </summary>
+    /// <returns>true if it is a server</returns>
     public bool IsServer
     {
         get { return _isServer; }
     }
 
     /// <summary>
-    /// This Function is called once the script awakes, even before Enable() and Start()
+    /// This function is called once the script awakes, even before Enable() and Start()
     /// </summary>
     private void Awake()
     {
@@ -96,7 +126,9 @@ public class TextureNetworkManager : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
     }
 
-	// Use this for initialization
+	/// <summary>
+    /// Initializes the texture network manager
+    /// </summary>
 	void Start () {
         //create configuration containing one reliable channel
         m_Config = new ConnectionConfig();
@@ -106,6 +138,9 @@ public class TextureNetworkManager : MonoBehaviour
         m_maxNumberClients = 12;
 	}
 
+    /// <summary>
+    /// Renders the gui and checks if the user interacts with it
+    /// </summary>
     void OnGUI()
     {
         if (!_isStarted)
@@ -149,8 +184,10 @@ public class TextureNetworkManager : MonoBehaviour
     private SceneStateMessage sceneStateMessage;
 
 
-	// Update is called once per frame
-	void Update () 
+	/// <summary>
+    /// Update is called once per frame
+    /// </summary>
+	void Update ()
     {
 
 	    if (!_isStarted)
@@ -176,6 +213,11 @@ public class TextureNetworkManager : MonoBehaviour
         }
 	}
 
+    /// <summary>
+    /// Called when the raycaster parameter where changed
+    /// </summary>
+    /// <param name="pass">The pass of the raycaster shader</param> 
+    /// <param name="opacity">The opacity of the raycaster shader</param> 
     public void OnRaycasterParameterChanged(int pass, float opacity)
     {
         if(!_isServer)
@@ -195,8 +237,13 @@ public class TextureNetworkManager : MonoBehaviour
         }
     }
 
-
-
+    /// <summary>
+    /// Called when the scene state where changed
+    /// </summary>
+    /// <param name="volumeWorldMatrix">the volume world matrix</param>
+    /// <param name="viewMatrix">the view matrix</param>
+    /// <param name="projectionMatrix">the projection matrix</param>
+    /// <param name="cameraPos">the camera position</param>
     public void OnSceneStateChanged(Matrix4x4 volumeWorldMatrix, Matrix4x4 viewMatrix, Matrix4x4 projectionMatrix, Vector3 cameraPos)
     {
         if (!_isServer)
@@ -213,6 +260,11 @@ public class TextureNetworkManager : MonoBehaviour
        // SendMessageToAllClients(msg, RayCastStateMessage.MSG_ID);
     }
 
+    /// <summary>
+    /// Send a texture to the server
+    /// </summary>
+    /// <param name="tileIndex">the index of the tile</param>
+    /// <param name="textureData">the texture to send</param>
     public void SendTextureToServer(Vector2 tileIndex, ref byte[] textureData)
     {
         if (_isServer)
@@ -225,6 +277,9 @@ public class TextureNetworkManager : MonoBehaviour
         SendDataToServer(ref data);
     }
 
+    /// <summary>
+    /// Called when a client is added or removed
+    /// </summary>
     private void OnClientsChanged()
     {
         int numClients = m_RendererClientIds.Count;
@@ -248,6 +303,11 @@ public class TextureNetworkManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Send a message to all clients
+    /// </summary>
+    /// <param name="msg">A Network Message</param>
+    /// <param name="msgType">The network id of the network message</param>
     private void SendMessageToAllClients(MessageBase msg, short msgType)
     {
         byte[] data = new byte[256];
@@ -261,6 +321,12 @@ public class TextureNetworkManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Send a message to a single clients
+    /// </summary>
+    /// <param name="msg">A Network Message</param>
+    /// <param name="msgType">The network id of the network message</param>
+    /// <param name="clientConnectionId">The connection id of the client this message is sent</param>
     private void SendMessageToClient(MessageBase msg, short msgType, int clientConnectionId)
     {
         byte[] data = new byte[256];
@@ -271,6 +337,10 @@ public class TextureNetworkManager : MonoBehaviour
         SendDataToClient(clientConnectionId, ref data);
     }
 
+    /// <summary>
+    /// The coroutine to receive network events on the client and on the server
+    /// This includes the Connection, Disconnection and Data Events
+    /// </summary>
     IEnumerator ReceiveNetworkEvents()
     {
         int recHostId;
@@ -323,6 +393,7 @@ public class TextureNetworkManager : MonoBehaviour
 
         yield return null;
     }
+
     /// <summary>
     /// Called on the client that the server disconnected
     /// </summary>
@@ -510,6 +581,9 @@ public class TextureNetworkManager : MonoBehaviour
         NetworkTransport.Shutdown();
     }
 
+    /// <summary>
+    /// Send a single tile to every client.
+    /// </summary>
     private void ArrangeTilesToClients()
     {
         var tiles = m_tileComposer.tiles;

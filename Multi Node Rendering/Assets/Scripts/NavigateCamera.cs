@@ -4,19 +4,50 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
+/// <summary>
+/// This class is used to navigate the camera from the composer
+/// </summary>
 [ExecuteInEditMode]
 public class NavigateCamera : MonoBehaviour
 {
+    /// <summary>
+    /// The default distance from the object to the camera
+    /// </summary>
     public float DefaultDistance = 5.0f;
 
+    /// <summary>
+    /// The rotation speed of the arc ball rotation
+    /// </summary>
     public float AcrBallRotationSpeed = 0.25f;
+
+    /// <summary>
+    /// The FPS Rotation Speed
+    /// </summary>    
     public float FpsRotationSpeed = 0.25f;
+
+    /// <summary>
+    /// The translation speed
+    /// </summary>    
     public float TranslationSpeed = 10.0f;
+
+    /// <summary>
+    /// The scrolling speed
+    /// </summary>      
     public float ScrollingSpeed = 1.0f;
+
+    /// <summary>
+    /// The panning speed
+    /// </summary>      
     public float PannigSpeed = 0.25f;
 
+    /// <summary>
+    /// The start position of the target object
+    /// </summary>  
     public Vector3 TargetPosition;
 
+    /// <summary>
+    /// The target object
+    /// </summary>      
     [HideInInspector]
     public GameObject TargetGameObject;
 
@@ -27,12 +58,21 @@ public class NavigateCamera : MonoBehaviour
     private bool right;
     private bool left;
 
+    /// <summary>
+    /// The current distance of the camera to the game object
+    /// </summary>      
     [HideInInspector]
     public float Distance;
 
+    /// <summary>
+    /// The euler angle in X direction
+    /// </summary>     
     [HideInInspector]
     public float EulerAngleX;
 
+    /// <summary>
+    /// The euler angle in Y direction
+    /// </summary> 
     [HideInInspector]
     public float EulerAngleY;
 
@@ -53,6 +93,9 @@ public class NavigateCamera : MonoBehaviour
         #endif
     }
 
+    /// <summary>
+    /// Update is called once per frame
+    /// </summary>    
     void Update()
     {
         if ( TextureNetworkManager.Instance == null || !TextureNetworkManager.Instance.IsServer)

@@ -8,10 +8,15 @@ using System.Collections.Generic;
 public class TileRaycaster : MonoBehaviour
 {
 
-    // A collection to store all tiles to be rendered
+    /// <summary>
+    /// A collection to store all tiles to be rendered
+    /// </summary>
     private ScreenTile tile;
 
-    // State object
+    /// <summary>
+    /// the state message
+    /// </summary>
+
     private SceneStateMessage state;
     private bool stateChanged = false;
     private Vector2 numTiles;
@@ -25,6 +30,9 @@ public class TileRaycaster : MonoBehaviour
     [SerializeField]
     private Material rayMarchMaterial;
     
+    /// <summary>
+    /// The material to render onto a quad
+    /// </summary>
     public Material texturedQuadMaterial;
 
     [SerializeField]
@@ -33,6 +41,9 @@ public class TileRaycaster : MonoBehaviour
     private float opacity = 1;
     private int pass = 0;
 
+    /// <summary>
+    /// The pass of the raycast shader
+    /// </summary>
     public int Pass
     {
         get { return pass; }
@@ -42,6 +53,10 @@ public class TileRaycaster : MonoBehaviour
             this.stateChanged = true;
         }
     }
+
+    /// <summary>
+    /// the opacity of the raycast shader
+    /// </summary>
     public float Opacity
     {
         get { return opacity; }
@@ -62,9 +77,9 @@ public class TileRaycaster : MonoBehaviour
     private RenderTexture backDepth;
 
     /// <summary>
-    /// 
+    /// Called from the network manager (rpc) and updates the tile
     /// </summary>
-    /// <param name="tile"></param>
+    /// <param name="tile">the tile</param>
     public void RpcSetTile(ScreenTile tile)
     {
         if(this.tile == null || this.tile.numTiles.x != tile.numTiles.x || this.tile.numTiles.y != tile.numTiles.y)
@@ -81,9 +96,9 @@ public class TileRaycaster : MonoBehaviour
     }
 
     /// <summary>
-    /// 
+    /// Called from the network manager (rpc) and updates the state
     /// </summary>
-    /// <param name="state"></param>
+    /// <param name="state">a state message</param>
     public void RpcSetSceneState(SceneStateMessage state)
     {
         // Set new state
@@ -93,9 +108,9 @@ public class TileRaycaster : MonoBehaviour
 
 
     /// <summary>
-    /// 
+    /// Get the rendered image of the tile
     /// </summary>
-    /// <returns></returns>
+    /// <returns>the rendered image of the tile</returns>
     public Texture2D GetRenderedImage()
     {
         return renderedImage;
@@ -145,7 +160,7 @@ public class TileRaycaster : MonoBehaviour
     }
 
     /// <summary>
-    /// 
+    /// Render the current tile and send it to the server
     /// </summary>
     public void RenderTile()
     {
@@ -204,6 +219,9 @@ public class TileRaycaster : MonoBehaviour
         TextureNetworkManager.Instance.SendTextureToServer(tile.tileIndex, ref textureData);
     }
 
+    /// <summary>
+    /// Update is called once per frame
+    /// </summary>
     void Update()
     {
         if (stateChanged)
@@ -214,8 +232,13 @@ public class TileRaycaster : MonoBehaviour
     }
 
     /// <summary>
-    /// 
+    /// Create the render texture with the specified parameters with point filter mode, no mip maps and random write
     /// </summary>
+    /// <returns>The render texture</returns>
+    /// <param name="width">the width</param>
+    /// <param name="height">the height</param>
+    /// <param name="depth">the depth</param>
+    /// <param name="format">the render texture format (ARGBFloat recommended)</param>
     public static RenderTexture CreateRenderTexture(int width, int height, int depth, RenderTextureFormat format)
     {
         //Debug.Log("DeferredRenderer.CreateRenderTexture() " + width + ", " + height + ", " + depth);

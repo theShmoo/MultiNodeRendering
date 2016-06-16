@@ -4,8 +4,17 @@ using System.Collections;
 using System.Text;
 using UnityEngine.Networking;
 
+/// <summary>
+/// Can be used to debug a network connection
+/// </summary>
 class DebugConnection : NetworkConnection
 {
+    /// <summary>
+    /// Is called when new data is received.
+    /// </summary>
+    /// <param name="bytes">the received data</param>
+    /// <param name="numBytes">the number of bytes of the data</param>
+    /// <param name="channelId">the channel of the transportation</param>
     public override void TransportRecieve(byte[] bytes, int numBytes, int channelId)
     {
         StringBuilder msg = new StringBuilder();

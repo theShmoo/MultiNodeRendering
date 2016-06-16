@@ -7,12 +7,28 @@ using UnityEngine.Networking;
 /// </summary>
 public class ScreenTile
 {
-    public float fov;
-    public float np;
-    public float fp;
-    public float aspect;
     /// <summary>
-    /// The number of tiles
+    /// The field of view
+    /// </summary>     
+    public float fov;
+    
+    /// <summary>
+    /// The near plane
+    /// </summary>    
+    public float np;
+    
+    /// <summary>
+    /// The fear plane
+    /// </summary>       
+    public float fp;
+    
+    /// <summary>
+    /// The aspect ratio
+    /// </summary>       
+    public float aspect;
+
+    /// <summary>
+    /// The number of tiles in x and y direction
     /// </summary>
     public Vector2 numTiles;
 
@@ -34,7 +50,7 @@ public class ScreenTile
     /// <summary>
     /// Returns the tile size scaled from 0 to 1
     /// </summary>
-    /// <returns></returns>
+    /// <returns>the tile size scaled from 0 to 1</returns>
     public Vector2 Size
     {
         get {
@@ -42,6 +58,10 @@ public class ScreenTile
         }
     }
 
+    /// <summary>
+    /// Get the tile message from the tile object
+    /// </summary>
+    /// <returns>the tile message</returns>       
     public TileMessage GetTileMessage()
     {
         TileMessage msg = new TileMessage();
@@ -57,6 +77,10 @@ public class ScreenTile
         return msg;
     }
 
+    /// <summary>
+    /// Set the Screen Tile by a tile message
+    /// </summary>    
+    /// <param name="msg">a tile message</param>
     public void setFromTileMessage(TileMessage msg)
     {
         this.fov = msg.fov;
@@ -72,6 +96,7 @@ public class ScreenTile
 	/// <summary>
 	/// Returns the proper off center projection matrix for this tile of the given camera
 	/// </summary>
+    /// <returns>the proper off center projection matrix for this tile of the given camera</returns>
     public Matrix4x4 getOffCenterProjectionMatrix()
     {
         // Compute correct view port rect values
@@ -104,9 +129,9 @@ public class ScreenTile
 
 
     /// <summary>
-    /// Computes an off center perspective projection matrix
+    /// Computes an off center perspective projection matrix for this tile
     /// </summary>
-    
+    /// <returns>The perspective off center matrix for this tile</returns>
     private static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far)
     {
 

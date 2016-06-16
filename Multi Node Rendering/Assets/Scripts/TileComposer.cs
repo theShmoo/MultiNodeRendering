@@ -3,14 +3,26 @@
 using System;
 using System.Collections.Generic;
 
+/// <summary>
+/// This class is responsible for tiling the screen into tiles and composing the tiles together.
+/// </summary>
 public class TileComposer : MonoBehaviour
 {
 
     private Vector2 numTiles = new Vector2(0,0);
 
+    /// <summary>
+    /// the list of tiles
+    /// </summary>
     public List<ScreenTile> tiles;
+    /// <summary>
+    /// a dictonary from a position of the tile (x,y) to the texture
+    /// </summary>
     public Dictionary<Vector2,Texture2D> renderedImages;
 
+    /// <summary>
+    /// the material to compose the tiles
+    /// </summary>
     public Material texturedQuadMaterial;
 
     TextureNetworkManager textureNetworkManager;
@@ -25,12 +37,18 @@ public class TileComposer : MonoBehaviour
 
     private int lastPass = 0;
 
+    /// <summary>
+    /// the composer is active when it has at least one tile
+    /// </summary>
     public bool Active
     {
         get { return active; }
         set { active = value; }
     }
 
+    /// <summary>
+    /// the pass of the raycasting shader
+    /// </summary>
     public int Pass
     {
         get { return pass; }
@@ -43,6 +61,9 @@ public class TileComposer : MonoBehaviour
             }
         }
     }
+    /// <summary>
+    /// the opacity of the raycasting shader
+    /// </summary>    
     public float Opacity
     {
         get { return opacity; }
@@ -57,30 +78,45 @@ public class TileComposer : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// called when the pass or the opacity is changed
+    /// </summary>
     void OnRaycasterParameterChanged()
     {
         if (TextureNetworkManager.Instance != null)
             TextureNetworkManager.Instance.OnRaycasterParameterChanged(pass, opacity);
     }
 
-    // Use this for initialization
+    /// <summary>
+    /// Initialize the tile composer
+    /// </summary>
 	void Start () {
         tiles = new List<ScreenTile>();
         renderedImages = new Dictionary<Vector2, Texture2D>();
         NumTilesChanged(numTiles);
 	}
 	
-	// Update is called once per frame
-	void Update () {
+	/// <summary>
+    /// Update is called once per frame
+    /// The tile composer does nothing on update
+    /// </summary>
+	void Update () 
+    {
         // nothing to do
 	}
 
+    /// <summary>
+    /// loads the bytes into the texture at the specified tile index
+    /// </summary>
+    /// <param name="tileIndex">the tile index</param>
+    /// <param name="data">the texture data</param>
     public void SetTexture(Vector2 tileIndex, byte[] data)
     {
         var tex = renderedImages[tileIndex];
         tex.LoadImage(data);
         tex.Apply();
     }
+
 
     private void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
@@ -131,8 +167,10 @@ public class TileComposer : MonoBehaviour
     }
 
     /// <summary>
-    /// 
+    /// Called when the number of tiles changed. 
+    /// Clears all tiles and creates new ones.
     /// </summary>
+    /// <param name="numTiles">the number of tiles in x and y direction</param>
     public void NumTilesChanged(Vector2 numTiles)
     {
         this.numTiles = numTiles;
