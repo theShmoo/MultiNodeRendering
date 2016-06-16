@@ -41,7 +41,11 @@ public class TileMessage : MessageBase
 
     public static short MSG_ID = 1001;
 
-    // This method would be generated
+    /// <summary>
+    /// Deserialize the message parameters
+    /// This method would be generated
+    /// </summary>
+    /// <param name="writer">the network stream writer</param>
     public override void Deserialize(NetworkReader reader)
     {
         fov = reader.ReadSingle();
@@ -56,7 +60,11 @@ public class TileMessage : MessageBase
         tileIndex = reader.ReadVector2();
     }
 
-    // This method would be generated
+    /// <summary>
+    /// Serialize the message parameters
+    /// This method would be generated
+    /// </summary>
+    /// <param name="writer">the network stream writer</param>
     public override void Serialize(NetworkWriter writer)
     {
         writer.Write(fov);
@@ -72,6 +80,9 @@ public class TileMessage : MessageBase
     }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public class RaycastParameterMessage : MessageBase
 {
     public int pass;
