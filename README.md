@@ -21,4 +21,3 @@ The client is responsible for dividing the rendering stages onto its nodes and t
 ## Frameworks
 
  * Unity
- * [Cluster Rendering](https://bitbucket.org/Unity-Design/clusterrendering)
