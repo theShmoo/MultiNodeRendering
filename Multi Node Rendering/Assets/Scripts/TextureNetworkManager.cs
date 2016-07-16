@@ -8,7 +8,6 @@ using UnityEngine.Networking;
 /// <summary>
 /// This class manages the network communication between the render composer and the render nodes
 /// </summary>
-[RequireComponent(typeof(Camera))]
 public class TextureNetworkManager : MonoBehaviour
 {
     /// <summary>

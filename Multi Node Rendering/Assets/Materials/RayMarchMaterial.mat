@@ -7,7 +7,7 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: RayMarchMaterial
-  m_Shader: {fileID: 4800000, guid: 686aa83e45d61f243ac66e7d8fd4e389, type: 3}
+  m_Shader: {fileID: 4800000, guid: 2e78176946cebbb41ac1bfd53561d1b4, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_CustomRenderQueue: 2000

@@ -35,7 +35,7 @@ public class SceneStateMessage : MessageBase
 /// <summary>
 /// This class represents a network message that specifies one tile. 
 /// </summary>
-<see cref="ScreenTile" />
+/// <see cref="ScreenTile" />
 public class TileMessage : MessageBase
 {
     /// <summary>

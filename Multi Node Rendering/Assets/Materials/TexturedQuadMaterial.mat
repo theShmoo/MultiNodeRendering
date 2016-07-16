@@ -7,7 +7,7 @@ Material:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: TexturedQuadMaterial
-  m_Shader: {fileID: 4800000, guid: 112e56d4af1450e448e75baae758906d, type: 3}
+  m_Shader: {fileID: 4800000, guid: 8c00c45ce13d6b44c9dd22dcfe401cc6, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_CustomRenderQueue: 2000

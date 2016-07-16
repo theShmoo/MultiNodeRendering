@@ -1,1 +1,0 @@
-If Unity claims that the version of the project is lower than its version (5.x), copy the LibaryFormatVersion.txt into the Library folder in Multi Node Rendering. THis prevents unity from rebuilding all assets causing all gameobjects to loose their components. 
